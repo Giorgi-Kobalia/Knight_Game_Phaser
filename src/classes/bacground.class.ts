@@ -28,6 +28,5 @@ export class Background {
     this.layers.forEach((layer, index) => {
       layer.tilePositionX += speed * (index + 1);
     });
-    console.log(2);
   }
 }
