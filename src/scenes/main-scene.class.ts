@@ -9,6 +9,7 @@ export class MainScene extends Phaser.Scene {
   }
 
   preload() {
+    // preload Background manifest
     bg_manifest.forEach((element: { key: string; path: string }) => {
       this.load.image(element.key, element.path);
     });
@@ -20,6 +21,6 @@ export class MainScene extends Phaser.Scene {
   }
 
   update() {
-    this.background.update(0.2)
+    // this.background.update(0.2)
   }
 }
