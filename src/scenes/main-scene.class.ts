@@ -1,11 +1,16 @@
-import { Archer, Background, Knight } from "../classes";
-import { archer_constants, knight_constants } from "../constants";
+import { Archer, Background, Knight, Necromancer } from "../classes";
+import {
+  archer_constants,
+  knight_constants,
+  necromancer_constants,
+} from "../constants";
 import { bg_manifest } from "../manifests";
 
 export class MainScene extends Phaser.Scene {
   private background!: Background;
   private knight!: Knight;
   private archer!: Archer;
+  private necromancer!: Necromancer;
 
   constructor() {
     super("MainScene");
@@ -44,6 +49,20 @@ export class MainScene extends Phaser.Scene {
         );
       }
     );
+    // preload Archer manifest
+    necromancer_constants.forEach(
+      (element: {
+        spriteKey: string;
+        spritePath: string;
+        spriteConfiguration: Phaser.Types.Textures.SpriteSheetConfig;
+      }) => {
+        this.load.spritesheet(
+          element.spriteKey,
+          element.spritePath,
+          element.spriteConfiguration
+        );
+      }
+    );
   }
 
   create() {
@@ -53,10 +72,13 @@ export class MainScene extends Phaser.Scene {
     this.knight.init();
     this.archer = new Archer(this);
     this.archer.init();
+    this.necromancer = new Necromancer(this);
+    this.necromancer.init();
   }
 
   update() {
-    this.knight.update();
+    // this.knight.update();
     this.archer.update();
+    this.necromancer.update();
   }
 }

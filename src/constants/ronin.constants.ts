@@ -1,4 +1,4 @@
-export const archer_constants = [
+export const ronin_constants = [
   {
     spriteKey: "Archer_Idle",
     spritePath: "./img/Archer/Archer_Idle.png",
@@ -39,7 +39,7 @@ export const archer_constants = [
     animationKey: "archer_attack",
     animConfiguration: {
       start: 0,
-      end: 13,
+      end: 8,
     },
     frameRate: 8,
     repeat: 1,
