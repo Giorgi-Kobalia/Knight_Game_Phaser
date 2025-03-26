@@ -1,9 +1,17 @@
-import { Archer, Background, Knight, Necromancer, Paladin } from "../classes";
+import {
+  Archer,
+  Background,
+  Knight,
+  Necromancer,
+  Paladin,
+  Ronin,
+} from "../classes";
 import {
   archer_constants,
   knight_constants,
   necromancer_constants,
   paladin_constants,
+  ronin_constants,
 } from "../constants";
 import { bg_manifest } from "../manifests";
 
@@ -13,6 +21,7 @@ export class MainScene extends Phaser.Scene {
   private archer!: Archer;
   private necromancer!: Necromancer;
   private paladin!: Paladin;
+  private ronin!: Ronin;
 
   constructor() {
     super("MainScene");
@@ -79,6 +88,21 @@ export class MainScene extends Phaser.Scene {
         );
       }
     );
+
+    // preload Ronin manifest
+    ronin_constants.forEach(
+      (element: {
+        spriteKey: string;
+        spritePath: string;
+        spriteConfiguration: Phaser.Types.Textures.SpriteSheetConfig;
+      }) => {
+        this.load.spritesheet(
+          element.spriteKey,
+          element.spritePath,
+          element.spriteConfiguration
+        );
+      }
+    );
   }
 
   create() {
@@ -96,6 +120,9 @@ export class MainScene extends Phaser.Scene {
 
     this.paladin = new Paladin(this);
     this.paladin.init();
+
+    this.ronin = new Ronin(this);
+    this.ronin.init();
   }
 
   update() {
@@ -106,5 +133,7 @@ export class MainScene extends Phaser.Scene {
     this.necromancer.update();
 
     this.paladin.update();
+
+    this.ronin.update();
   }
 }

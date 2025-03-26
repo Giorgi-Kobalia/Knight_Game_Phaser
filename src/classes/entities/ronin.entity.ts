@@ -20,7 +20,7 @@ export class Ronin {
   }
 
   init() {
-    this.ronin = this.scene.add.sprite(1100, 480, RONIN[0].spriteKey);
+    this.ronin = this.scene.add.sprite(1310, 476, RONIN[0].spriteKey);
     this.ronin.scale = 3;
 
     this.keys = {
@@ -57,18 +57,16 @@ export class Ronin {
 
     if (this.keys.A.isDown) {
       this.ronin.setFlipX(true);
-      this.ronin.play("archer_walk", true);
+      this.ronin.play("ronin_walk", true);
     } else if (this.keys.D.isDown) {
       this.ronin.setFlipX(false);
-      this.ronin.play("archer_walk", true);
-    } else if (this.keys.SHIFT.isDown) {
-      this.ronin.play("archer_special", true);
+      this.ronin.play("ronin_walk", true);
     } else if (this.keys.SPACE.isDown) {
-      this.ronin.play("archer_attack", true);
+      this.ronin.play("ronin_attack", true);
     } else if (this.keys.W.isDown) {
-      this.ronin.play("archer_death", true);
+      this.ronin.play("ronin_death", true);
     } else {
-      this.ronin.play("archer_idle", true);
+      this.ronin.play("ronin_idle", true);
     }
   }
 }
