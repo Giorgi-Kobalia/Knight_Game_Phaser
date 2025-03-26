@@ -1,12 +1,11 @@
 import Phaser from "phaser";
-import { knight_constants } from "../../constants";
+import { archer_constants } from "../../constants";
 
-const KNIGHT = knight_constants;
+const ARCHER = archer_constants;
 
-export class Knight {
+export class Archer {
   private scene: Phaser.Scene;
-  private knight?: Phaser.GameObjects.Sprite;
-  private background: any;
+  private archer?: Phaser.GameObjects.Sprite;
 
   private keys?: {
     W: Phaser.Input.Keyboard.Key;
@@ -16,14 +15,13 @@ export class Knight {
     SPACE: Phaser.Input.Keyboard.Key;
   };
 
-  constructor(scene: Phaser.Scene, background: any) {
+  constructor(scene: Phaser.Scene) {
     this.scene = scene;
-    this.background = background;
   }
 
   init() {
-    this.knight = this.scene.add.sprite(900, 480, KNIGHT[0].spriteKey);
-    this.knight.scale = 3;
+    this.archer = this.scene.add.sprite(700, 480, ARCHER[0].spriteKey);
+    this.archer.scale = 3;
 
     this.keys = {
       W: this.scene.input.keyboard!.addKey(Phaser.Input.Keyboard.KeyCodes.W),
@@ -41,7 +39,7 @@ export class Knight {
   }
 
   animations() {
-    KNIGHT.forEach((element) => {
+    ARCHER.forEach((element) => {
       this.scene.anims.create({
         key: element.animationKey,
         frames: this.scene.anims.generateFrameNumbers(
@@ -55,24 +53,22 @@ export class Knight {
   }
 
   update() {
-    if (!this.knight || !this.keys) return;
+    if (!this.archer || !this.keys) return;
 
     if (this.keys.A.isDown) {
-      this.knight.setFlipX(true);
-      this.knight.play("knight_walk", true);
-      this.background.update(-0.2);
+      this.archer.setFlipX(true);
+      this.archer.play("archer_walk", true);
     } else if (this.keys.D.isDown) {
-      this.knight.setFlipX(false);
-      this.knight.play("knight_walk", true);
-      this.background.update(0.2);
+      this.archer.setFlipX(false);
+      this.archer.play("archer_walk", true);
     } else if (this.keys.SHIFT.isDown) {
-      this.knight.play("knight_shield", true);
+      this.archer.play("archer_special", true);
     } else if (this.keys.SPACE.isDown) {
-      this.knight.play("knight_attack", true);
+      this.archer.play("archer_attack", true);
     } else if (this.keys.W.isDown) {
-      this.knight.play("knight_death", true);
+      this.archer.play("archer_death", true);
     } else {
-      this.knight.play("knight_idle", true);
+      this.archer.play("archer_idle", true);
     }
   }
 }

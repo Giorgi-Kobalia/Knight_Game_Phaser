@@ -1,10 +1,11 @@
-import { Background, Knight } from "../classes";
-import { knight_constants } from "../constants";
+import { Archer, Background, Knight } from "../classes";
+import { archer_constants, knight_constants } from "../constants";
 import { bg_manifest } from "../manifests";
 
 export class MainScene extends Phaser.Scene {
   private background!: Background;
   private knight!: Knight;
+  private archer!: Archer;
 
   constructor() {
     super("MainScene");
@@ -29,6 +30,20 @@ export class MainScene extends Phaser.Scene {
         );
       }
     );
+    // preload Archer manifest
+    archer_constants.forEach(
+      (element: {
+        spriteKey: string;
+        spritePath: string;
+        spriteConfiguration: Phaser.Types.Textures.SpriteSheetConfig;
+      }) => {
+        this.load.spritesheet(
+          element.spriteKey,
+          element.spritePath,
+          element.spriteConfiguration
+        );
+      }
+    );
   }
 
   create() {
@@ -36,9 +51,12 @@ export class MainScene extends Phaser.Scene {
     this.background.init();
     this.knight = new Knight(this, this.background);
     this.knight.init();
+    this.archer = new Archer(this);
+    this.archer.init();
   }
 
   update() {
     this.knight.update();
+    this.archer.update();
   }
 }

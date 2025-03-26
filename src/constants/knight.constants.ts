@@ -6,7 +6,7 @@ export const knight_constants = [
       frameWidth: 64,
       frameHeight: 64,
     },
-    animationKey: "idle",
+    animationKey: "knight_idle",
     animConfiguration: {
       start: 0,
       end: 12,
@@ -21,7 +21,7 @@ export const knight_constants = [
       frameWidth: 96,
       frameHeight: 64,
     },
-    animationKey: "walk",
+    animationKey: "knight_walk",
     animConfiguration: {
       start: 0,
       end: 7,
@@ -36,7 +36,7 @@ export const knight_constants = [
       frameWidth: 144,
       frameHeight: 64,
     },
-    animationKey: "attack",
+    animationKey: "knight_attack",
     animConfiguration: {
       start: 0,
       end: 21,
@@ -51,7 +51,7 @@ export const knight_constants = [
       frameWidth: 96,
       frameHeight: 64,
     },
-    animationKey: "death",
+    animationKey: "knight_death",
     animConfiguration: {
       start: 0,
       end: 14,
@@ -66,7 +66,7 @@ export const knight_constants = [
       frameWidth: 96,
       frameHeight: 64,
     },
-    animationKey: "shield",
+    animationKey: "knight_shield",
     animConfiguration: {
       start: 0,
       end: 6,
