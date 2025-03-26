@@ -13,9 +13,9 @@ const game = new Phaser.Game({
   version: import.meta.env.VERSION || "0.0.1",
   backgroundColor: "#fff",
   pixelArt: true,
-  // scale: {
-  //   mode: Phaser.Scale.FIT,
-  // },
+  scale: {
+    mode: Phaser.Scale.FIT,
+  },
 });
 
 gameBody?.appendChild(game.canvas);
