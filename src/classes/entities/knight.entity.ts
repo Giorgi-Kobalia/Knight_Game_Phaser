@@ -22,7 +22,7 @@ export class Knight {
   }
 
   init() {
-    this.knight = this.scene.add.sprite(900, 480, KNIGHT[0].spriteKey);
+    this.knight = this.scene.add.sprite(830, 480, KNIGHT[0].spriteKey);
     this.knight.scale = 3;
 
     this.keys = {

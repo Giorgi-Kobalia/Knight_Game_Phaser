@@ -21,7 +21,7 @@ export class Necromancer {
 
   init() {
     this.necromancer = this.scene.add.sprite(
-      500,
+      370,
       466,
       NECROMANCER[0].spriteKey
     );

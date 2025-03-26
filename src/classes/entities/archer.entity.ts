@@ -20,7 +20,7 @@ export class Archer {
   }
 
   init() {
-    this.archer = this.scene.add.sprite(700, 480, ARCHER[0].spriteKey);
+    this.archer = this.scene.add.sprite(640, 480, ARCHER[0].spriteKey);
     this.archer.scale = 3;
 
     this.keys = {

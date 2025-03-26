@@ -20,7 +20,7 @@ export class Paladin {
   }
 
   init() {
-    this.paladin = this.scene.add.sprite(1300, 480, PALADIN[0].spriteKey);
+    this.paladin = this.scene.add.sprite(1090, 514, PALADIN[0].spriteKey);
     this.paladin.scale = 3;
 
     this.keys = {
@@ -57,18 +57,18 @@ export class Paladin {
 
     if (this.keys.A.isDown) {
       this.paladin.setFlipX(true);
-      this.paladin.play("archer_walk", true);
+      this.paladin.play("paladin_walk", true);
     } else if (this.keys.D.isDown) {
       this.paladin.setFlipX(false);
-      this.paladin.play("archer_walk", true);
+      this.paladin.play("paladin_walk", true);
     } else if (this.keys.SHIFT.isDown) {
-      this.paladin.play("archer_special", true);
+      this.paladin.play("paladin_hit", true);
     } else if (this.keys.SPACE.isDown) {
-      this.paladin.play("archer_attack", true);
+      this.paladin.play("paladin_attack", true);
     } else if (this.keys.W.isDown) {
-      this.paladin.play("archer_death", true);
+      this.paladin.play("paladin_death", true);
     } else {
-      this.paladin.play("archer_idle", true);
+      this.paladin.play("paladin_idle", true);
     }
   }
 }
