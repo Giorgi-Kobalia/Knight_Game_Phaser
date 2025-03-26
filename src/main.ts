@@ -5,7 +5,7 @@ import { MainScene } from "./scenes/main-scene.class";
 const gameBody = document.getElementById("app");
 
 const game = new Phaser.Game({
-  width: 928,
+  width: 1800,
   height: 580,
   title: "Phaser RPG",
   scene: MainScene,
