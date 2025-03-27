@@ -33,7 +33,7 @@ export const archer_constants = [
     spriteKey: "Archer_Attack",
     spritePath: "./img/Archer/Archer_Attack.png",
     spriteConfiguration: {
-      frameWidth: 180,
+      frameWidth: 100,
       frameHeight: 128,
     },
     animationKey: "archer_attack",
