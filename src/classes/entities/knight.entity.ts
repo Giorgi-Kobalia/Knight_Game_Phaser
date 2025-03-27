@@ -7,6 +7,8 @@ export class Knight {
   private scene: Phaser.Scene;
   private knight?: Phaser.GameObjects.Sprite;
   private background: any;
+  private canIdle: boolean = true;
+  private dead: boolean = false;
 
   private keys?: {
     W: Phaser.Input.Keyboard.Key;
@@ -55,24 +57,61 @@ export class Knight {
   }
 
   update() {
-    if (!this.knight || !this.keys) return;
+    if (!this.knight || !this.keys || this.dead) return;
 
-    if (this.keys.A.isDown) {
+    const { A, D, SHIFT, SPACE, W } = this.keys;
+
+    // Handle movement
+
+    if (A.isDown) {
       this.knight.setFlipX(true);
+      this.canIdle = true;
       this.knight.play("knight_walk", true);
       this.background.update(-0.2);
-    } else if (this.keys.D.isDown) {
+    } else if (D.isDown) {
       this.knight.setFlipX(false);
+      this.canIdle = true;
       this.knight.play("knight_walk", true);
       this.background.update(0.2);
-    } else if (this.keys.SHIFT.isDown) {
-      this.knight.play("knight_shield", true);
-    } else if (this.keys.SPACE.isDown) {
+    }
+
+    // Handle shield
+    else if (SHIFT.isDown) {
+      if (this.knight.anims.currentAnim?.key !== "knight_shield") {
+        this.canIdle = false;
+        this.knight.play("knight_shield", true);
+      }
+    }
+    // Handle attack
+    else if (SPACE.isDown) {
+      this.canIdle = false;
+      this.knight?.setOrigin(0.5, 0.5);
       this.knight.play("knight_attack", true);
-    } else if (this.keys.W.isDown) {
-      this.knight.play("knight_death", true);
-    } else {
-      this.knight.play("knight_idle", true);
+
+      this.knight.on(
+        "animationcomplete",
+        (animation: Phaser.Animations.Animation) => {
+          if (animation.key === "knight_attack") {
+            this.knight?.setOrigin(0.5, 0.5);
+            this.canIdle = true;
+          }
+        }
+      );
+    }
+    // Handle death
+    else if (W.isDown) {
+      if (this.knight.anims.currentAnim?.key !== "knight_death") {
+        this.canIdle = false;
+        this.dead = true;
+        this.knight.play("knight_death", true);
+      }
+    }
+
+    // Handle idle state
+    else if (this.canIdle) {
+      if (this.knight.anims.currentAnim?.key !== "knight_idle") {
+        this.knight.play("knight_idle", true);
+      }
     }
   }
 }

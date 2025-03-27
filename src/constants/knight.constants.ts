@@ -33,16 +33,16 @@ export const knight_constants = [
     spriteKey: "Knight_Attack",
     spritePath: "./img/Knight/Knight_Attack.png",
     spriteConfiguration: {
-      frameWidth: 144,
+      frameWidth: 160,
       frameHeight: 64,
     },
     animationKey: "knight_attack",
     animConfiguration: {
       start: 0,
-      end: 21,
+      end: 12,
     },
-    frameRate: 21,
-    repeat: 1,
+    frameRate: 18,
+    repeat: 0,
   },
   {
     spriteKey: "Knight_Death",
@@ -57,7 +57,7 @@ export const knight_constants = [
       end: 14,
     },
     frameRate: 14,
-    repeat: 1,
+    repeat: 0,
   },
   {
     spriteKey: "Knight_Shield",
@@ -71,7 +71,7 @@ export const knight_constants = [
       start: 0,
       end: 6,
     },
-    frameRate: 12,
-    repeat: 1,
+    frameRate: 22,
+    repeat: 0,
   },
 ];
