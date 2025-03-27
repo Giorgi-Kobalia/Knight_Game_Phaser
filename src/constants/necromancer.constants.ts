@@ -33,13 +33,13 @@ export const necromancer_constants = [
     spriteKey: "Necromancer_Attack",
     spritePath: "./img/Necromancer/Necromancer_Attack.png",
     spriteConfiguration: {
-      frameWidth: 128,
-      frameHeight: 128,
+      frameWidth: 130,
+      frameHeight: 130,
     },
     animationKey: "necromancer_attack",
     animConfiguration: {
       start: 0,
-      end: 46,
+      end: 41,
     },
     frameRate: 12,
     repeat: 1,
