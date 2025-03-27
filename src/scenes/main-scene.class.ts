@@ -8,6 +8,7 @@ import {
 } from "../classes";
 import {
   archer_constants,
+  bullets_constants,
   knight_constants,
   necromancer_constants,
   paladin_constants,
@@ -103,25 +104,38 @@ export class MainScene extends Phaser.Scene {
         );
       }
     );
+
+    // preload bullets manifest
+    bullets_constants.forEach(
+      (element: { spriteKey: string; spritePath: string }) => {
+        this.load.image(element.spriteKey, element.spritePath);
+      }
+    );
   }
 
   create() {
     this.background = new Background(this);
-    this.background.init();
 
     this.knight = new Knight(this, this.background);
-    this.knight.init();
 
     this.archer = new Archer(this);
-    this.archer.init();
 
     this.necromancer = new Necromancer(this);
-    this.necromancer.init();
 
     this.paladin = new Paladin(this);
-    this.paladin.init();
 
     this.ronin = new Ronin(this);
+
+    this.background.init();
+
+    this.knight.init();
+
+    this.archer.init();
+
+    this.necromancer.init();
+
+    this.paladin.init();
+
     this.ronin.init();
   }
 

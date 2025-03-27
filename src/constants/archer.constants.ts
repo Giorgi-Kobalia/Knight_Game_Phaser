@@ -42,7 +42,7 @@ export const archer_constants = [
       end: 13,
     },
     frameRate: 8,
-    repeat: 1,
+    repeat: 0,
   },
   {
     spriteKey: "Archer_Death",
@@ -57,7 +57,7 @@ export const archer_constants = [
       end: 23,
     },
     frameRate: 10,
-    repeat: 1,
+    repeat: 0,
   },
   {
     spriteKey: "Archer_Special",
@@ -72,6 +72,6 @@ export const archer_constants = [
       end: 27,
     },
     frameRate: 15,
-    repeat: 1,
+    repeat: 0,
   },
 ];

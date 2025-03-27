@@ -77,22 +77,18 @@ export class Knight {
 
     // Handle shield
     else if (SHIFT.isDown) {
-      if (this.knight.anims.currentAnim?.key !== "knight_shield") {
-        this.canIdle = false;
-        this.knight.play("knight_shield", true);
-      }
+      this.canIdle = false;
+      this.knight.play("knight_shield", true);
     }
     // Handle attack
     else if (SPACE.isDown) {
       this.canIdle = false;
-      this.knight?.setOrigin(0.5, 0.5);
       this.knight.play("knight_attack", true);
 
       this.knight.on(
         "animationcomplete",
         (animation: Phaser.Animations.Animation) => {
           if (animation.key === "knight_attack") {
-            this.knight?.setOrigin(0.5, 0.5);
             this.canIdle = true;
           }
         }
@@ -109,9 +105,7 @@ export class Knight {
 
     // Handle idle state
     else if (this.canIdle) {
-      if (this.knight.anims.currentAnim?.key !== "knight_idle") {
-        this.knight.play("knight_idle", true);
-      }
+      this.knight.play("knight_idle", true);
     }
   }
 }

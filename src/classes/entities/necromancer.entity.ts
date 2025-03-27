@@ -6,6 +6,9 @@ const NECROMANCER = necromancer_constants;
 export class Necromancer {
   private scene: Phaser.Scene;
   private necromancer?: Phaser.GameObjects.Sprite;
+  private skull?: Phaser.GameObjects.Sprite;
+  private canIdle: boolean = true;
+  private dead: boolean = false;
 
   private keys?: {
     W: Phaser.Input.Keyboard.Key;
@@ -22,7 +25,7 @@ export class Necromancer {
   init() {
     this.necromancer = this.scene.add.sprite(
       370,
-      466,
+      470,
       NECROMANCER[0].spriteKey
     );
     this.necromancer.scale = 3;
@@ -40,6 +43,18 @@ export class Necromancer {
     };
 
     this.animations();
+
+    this.necromancer.on(
+      "animationupdate",
+      (
+        anim: Phaser.Animations.Animation,
+        frame: Phaser.Animations.AnimationFrame
+      ) => {
+        if (anim.key === "necromancer_attack" && frame.index === 31) {
+          this.spawnSkull(this.necromancer!.flipX);
+        }
+      }
+    );
   }
 
   animations() {
@@ -56,22 +71,77 @@ export class Necromancer {
     });
   }
 
-  update() {
-    if (!this.necromancer || !this.keys) return;
+  spawnSkull(direction: boolean) {
+    if (!this.necromancer) return;
 
-    if (this.keys.A.isDown) {
+    this.skull = this.scene.add.sprite(
+      direction ? this.necromancer.x + 46 : this.necromancer.x - 46,
+      this.necromancer.y - 10,
+      "Skull"
+    );
+
+    this.skull.scale = 0.15;
+    this.skull.setFlipX(direction);
+
+    this.skull.setData("velocity", direction ? -4 : 4);
+  }
+
+  destroySkull() {
+    if (!this.skull) return;
+    if (this.skull.x < 0 || this.skull.x > this.scene.scale.width) {
+      this.skull.destroy();
+      this.skull = undefined;
+    }
+  }
+
+  update() {
+    if (this.skull) {
+      this.skull.x += this.skull.getData("velocity");
+
+      this.destroySkull();
+    }
+
+    if (!this.necromancer || !this.keys || this.dead) return;
+
+    const { A, D, SHIFT, SPACE, W } = this.keys;
+
+    if (A.isDown) {
       this.necromancer.setFlipX(true);
+      this.canIdle = true;
       this.necromancer.play("necromancer_walk", true);
-    } else if (this.keys.D.isDown) {
+    } else if (D.isDown) {
       this.necromancer.setFlipX(false);
+      this.canIdle = true;
       this.necromancer.play("necromancer_walk", true);
-    } else if (this.keys.SHIFT.isDown) {
+    }
+
+    // Handle Milly Attack
+    else if (SHIFT.isDown) {
+      this.canIdle = false;
       this.necromancer.play("necromancer_special", true);
-    } else if (this.keys.SPACE.isDown) {
+      this.necromancer.on("animationcomplete", () => {
+        this.canIdle = true;
+      });
+    }
+
+    // Handle attack
+    else if (SPACE.isDown) {
+      this.canIdle = false;
       this.necromancer.play("necromancer_attack", true);
-    } else if (this.keys.W.isDown) {
+      this.necromancer.on("animationcomplete", () => {
+        this.canIdle = true;
+      });
+    }
+
+    // Handle death
+    else if (W.isDown) {
+      this.canIdle = false;
+      this.dead = true;
       this.necromancer.play("necromancer_death", true);
-    } else {
+    }
+
+    // Handle idle state
+    else if (this.canIdle) {
       this.necromancer.play("necromancer_idle", true);
     }
   }

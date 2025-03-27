@@ -42,7 +42,7 @@ export const necromancer_constants = [
       end: 41,
     },
     frameRate: 12,
-    repeat: 1,
+    repeat: 0,
   },
   {
     spriteKey: "Necromancer_Death",
@@ -57,7 +57,7 @@ export const necromancer_constants = [
       end: 51,
     },
     frameRate: 18,
-    repeat: 1,
+    repeat: 0,
   },
   {
     spriteKey: "Necromancer_Special",
@@ -72,6 +72,6 @@ export const necromancer_constants = [
       end: 19,
     },
     frameRate: 12,
-    repeat: 1,
+    repeat: 0,
   },
 ];
