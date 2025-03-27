@@ -33,7 +33,7 @@ export const ronin_constants = [
     spriteKey: "Ronin_Attack",
     spritePath: "./img/Ronin/Ronin_Attack.png",
     spriteConfiguration: {
-      frameWidth: 128,
+      frameWidth: 160,
       frameHeight: 96,
     },
     animationKey: "ronin_attack",
@@ -41,7 +41,7 @@ export const ronin_constants = [
       start: 0,
       end: 24,
     },
-    frameRate: 12,
+    frameRate: 18,
     repeat: 1,
   },
   {
