@@ -5,8 +5,7 @@ const KNIGHT = knight_constants;
 
 export class Knight {
   private scene: Phaser.Scene;
-  private knight?: Phaser.GameObjects.Sprite;
-  private background: { update: (delta: number) => void };
+  public knight?: Phaser.GameObjects.Sprite; // Make this public so it's accessible
   private canIdle: boolean = true;
   private dead: boolean = false;
 
@@ -18,9 +17,8 @@ export class Knight {
     SPACE: Phaser.Input.Keyboard.Key;
   };
 
-  constructor(scene: Phaser.Scene, background: any) {
+  constructor(scene: Phaser.Scene) {
     this.scene = scene;
-    this.background = background;
   }
 
   init() {
@@ -42,7 +40,7 @@ export class Knight {
     this.animations();
 
     this.knight.on("animationcomplete", (anim: Phaser.Animations.Animation) => {
-      // Go to iddle after playing athis animations
+      // Go to idle after playing this animation
       if (["knight_attack"].includes(anim.key)) {
         this.canIdle = true;
       }
@@ -82,17 +80,16 @@ export class Knight {
     const { A, D, SHIFT, SPACE, W } = this.keys;
 
     // Handle movement
-
     if (A.isDown) {
       this.knight.setFlipX(true);
       this.canIdle = true;
       this.knight.play("knight_walk", true);
-      this.background.update(-0.2);
+      this.knight.x -= 5;
     } else if (D.isDown) {
       this.knight.setFlipX(false);
       this.canIdle = true;
       this.knight.play("knight_walk", true);
-      this.background.update(0.2);
+      this.knight.x += 5;
     }
 
     // Handle shield

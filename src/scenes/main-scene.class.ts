@@ -28,7 +28,6 @@ interface CharacterConfig {
 
 export class MainScene extends Phaser.Scene {
   private background!: Background;
-
   private characters: {
     [key: string]: Knight | Archer | Necromancer | Paladin | Ronin;
   } = {};
@@ -43,7 +42,7 @@ export class MainScene extends Phaser.Scene {
         spriteKey: string;
         spritePath: string;
         spriteConfiguration: Phaser.Types.Textures.SpriteSheetConfig;
-      }[]
+      }[] 
     ) => {
       constants.forEach((element) => {
         this.load.spritesheet(
@@ -64,28 +63,28 @@ export class MainScene extends Phaser.Scene {
     });
 
     // Preload all character spritesheets
-    loadSpritesheets(knight_constants);
     loadSpritesheets(archer_constants);
     loadSpritesheets(necromancer_constants);
     loadSpritesheets(paladin_constants);
     loadSpritesheets(ronin_constants);
+    loadSpritesheets(knight_constants);
   }
 
   create() {
     this.background = new Background(this);
 
     const characters: CharacterConfig[] = [
-      { name: "knight", classRef: Knight },
       { name: "archer", classRef: Archer },
-      { name: "necromancer", classRef: Necromancer },
-      { name: "paladin", classRef: Paladin },
-      { name: "ronin", classRef: Ronin },
+      // { name: "necromancer", classRef: Necromancer },
+      // { name: "paladin", classRef: Paladin },
+      // { name: "ronin", classRef: Ronin },
+      { name: "knight", classRef: Knight },
     ];
 
     this.background.init();
 
     characters.forEach((character) => {
-      const characterInstance = new character.classRef(this, this.background);
+      const characterInstance = new character.classRef(this);
       characterInstance.init();
       this.characters[character.name] = characterInstance;
     });
@@ -98,3 +97,4 @@ export class MainScene extends Phaser.Scene {
     });
   }
 }
+
