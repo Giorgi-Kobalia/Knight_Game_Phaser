@@ -42,7 +42,7 @@ export const ronin_constants = [
       end: 24,
     },
     frameRate: 18,
-    repeat: 1,
+    repeat: 0,
   },
   {
     spriteKey: "Ronin_Death",
@@ -57,6 +57,6 @@ export const ronin_constants = [
       end: 15,
     },
     frameRate: 10,
-    repeat: 1,
+    repeat: 0,
   },
 ];

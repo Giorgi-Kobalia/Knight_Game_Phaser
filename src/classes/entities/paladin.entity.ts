@@ -6,6 +6,8 @@ const PALADIN = paladin_constants;
 export class Paladin {
   private scene: Phaser.Scene;
   private paladin?: Phaser.GameObjects.Sprite;
+  private canIdle: boolean = true;
+  private dead: boolean = false;
 
   private keys?: {
     W: Phaser.Input.Keyboard.Key;
@@ -53,21 +55,45 @@ export class Paladin {
   }
 
   update() {
-    if (!this.paladin || !this.keys) return;
+    if (!this.paladin || !this.keys || this.dead) return;
 
     if (this.keys.A.isDown) {
       this.paladin.setFlipX(true);
+      this.canIdle = true;
       this.paladin.play("paladin_walk", true);
     } else if (this.keys.D.isDown) {
       this.paladin.setFlipX(false);
+      this.canIdle = true;
       this.paladin.play("paladin_walk", true);
-    } else if (this.keys.SHIFT.isDown) {
+    }
+
+    // Handle Hit
+    else if (this.keys.SHIFT.isDown) {
+      this.canIdle = false;
       this.paladin.play("paladin_hit", true);
-    } else if (this.keys.SPACE.isDown) {
+      this.paladin.on("animationcomplete", () => {
+        this.canIdle = true;
+      });
+    }
+
+    // Handle attack
+    else if (this.keys.SPACE.isDown) {
+      this.canIdle = false;
       this.paladin.play("paladin_attack", true);
-    } else if (this.keys.W.isDown) {
+      this.paladin.on("animationcomplete", () => {
+        this.canIdle = true;
+      });
+    }
+
+    // Handle death
+    else if (this.keys.W.isDown) {
+      this.canIdle = false;
+      this.dead = true;
       this.paladin.play("paladin_death", true);
-    } else {
+    }
+
+    // Handle idle state
+    else if (this.canIdle) {
       this.paladin.play("paladin_idle", true);
     }
   }

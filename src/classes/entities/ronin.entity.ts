@@ -6,6 +6,8 @@ const RONIN = ronin_constants;
 export class Ronin {
   private scene: Phaser.Scene;
   private ronin?: Phaser.GameObjects.Sprite;
+  private canIdle: boolean = true;
+  private dead: boolean = false;
 
   private keys?: {
     W: Phaser.Input.Keyboard.Key;
@@ -53,19 +55,38 @@ export class Ronin {
   }
 
   update() {
-    if (!this.ronin || !this.keys) return;
+    if (!this.ronin || !this.keys || this.dead) return;
 
-    if (this.keys.A.isDown) {
+    const { A, D, SHIFT, SPACE, W } = this.keys;
+
+    if (A.isDown) {
       this.ronin.setFlipX(true);
+      this.canIdle = true;
       this.ronin.play("ronin_walk", true);
-    } else if (this.keys.D.isDown) {
+    } else if (D.isDown) {
       this.ronin.setFlipX(false);
+      this.canIdle = true;
       this.ronin.play("ronin_walk", true);
-    } else if (this.keys.SPACE.isDown) {
+    }
+
+    // Handle attack
+    else if (SPACE.isDown) {
+      this.canIdle = false;
       this.ronin.play("ronin_attack", true);
-    } else if (this.keys.W.isDown) {
+      this.ronin.on("animationcomplete", () => {
+        this.canIdle = true;
+      });
+    }
+
+    // Handle death
+    else if (W.isDown) {
+      this.canIdle = false;
+      this.dead = true;
       this.ronin.play("ronin_death", true);
-    } else {
+    }
+
+    // Handle idle state
+    else if (this.canIdle) {
       this.ronin.play("ronin_idle", true);
     }
   }

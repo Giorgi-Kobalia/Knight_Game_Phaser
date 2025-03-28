@@ -42,7 +42,7 @@ export const paladin_constants = [
       end: 40,
     },
     frameRate: 15,
-    repeat: 1,
+    repeat: 0,
   },
   {
     spriteKey: "Paladin_Death",
@@ -57,7 +57,7 @@ export const paladin_constants = [
       end: 64,
     },
     frameRate: 20,
-    repeat: 1,
+    repeat: 0,
   },
   {
     spriteKey: "Paladin_Hit",
@@ -72,6 +72,6 @@ export const paladin_constants = [
       end: 11,
     },
     frameRate: 11,
-    repeat: 1,
+    repeat: 0,
   },
 ];

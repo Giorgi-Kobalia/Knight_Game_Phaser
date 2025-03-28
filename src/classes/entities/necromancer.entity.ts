@@ -126,6 +126,7 @@ export class Necromancer {
 
     // Handle attack
     else if (SPACE.isDown) {
+      if (this.skull) return;
       this.canIdle = false;
       this.necromancer.play("necromancer_attack", true);
       this.necromancer.on("animationcomplete", () => {

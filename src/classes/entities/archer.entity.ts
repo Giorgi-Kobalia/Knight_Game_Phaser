@@ -121,6 +121,7 @@ export class Archer {
 
     // Handle attack
     else if (SPACE.isDown) {
+      if (this.arrow) return;
       this.canIdle = false;
       this.archer.play("archer_attack", true);
       this.archer.on("animationcomplete", () => {
