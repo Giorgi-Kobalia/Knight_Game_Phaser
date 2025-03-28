@@ -6,7 +6,7 @@ const ARCHER = archer_constants;
 export class Archer {
   private scene: Phaser.Scene;
   private archer?: Phaser.GameObjects.Sprite;
-  private arrow?: Phaser.GameObjects.Sprite;
+  private arrows: Phaser.GameObjects.Sprite[] = [];
   private canIdle: boolean = true;
   private dead: boolean = false;
 
@@ -40,6 +40,7 @@ export class Archer {
 
     this.animations();
 
+    // Fire arrow when custom frame of the attack animation plays
     this.archer.on(
       "animationupdate",
       (
@@ -51,6 +52,26 @@ export class Archer {
         }
       }
     );
+
+    this.archer.on("animationcomplete", (anim: Phaser.Animations.Animation) => {
+      // Go to iddle after playing athis animations
+      if (["archer_attack", "archer_special"].includes(anim.key)) {
+        this.canIdle = true;
+      }
+
+      // Handle death fade-out and destroy
+      if (anim.key === "archer_death") {
+        this.scene.tweens.add({
+          targets: this.archer,
+          alpha: 0,
+          duration: 500,
+          onComplete: () => {
+            this.archer?.destroy();
+            this.archer = undefined;
+          },
+        });
+      }
+    });
   }
 
   animations() {
@@ -70,31 +91,34 @@ export class Archer {
   spawnArrow(direction: boolean) {
     if (!this.archer) return;
 
-    this.arrow = this.scene.add.sprite(
+    const arrow = this.scene.add.sprite(
       this.archer.x,
       this.archer.y - 30,
       "Arrow"
     );
-    this.arrow.scale = 3;
-    this.arrow.setFlipX(direction);
+    arrow.scale = 3;
+    arrow.setFlipX(direction);
+    arrow.setData("velocity", direction ? -5 : 5);
 
-    this.arrow.setData("velocity", direction ? -5 : 5);
+    this.arrows.push(arrow);
   }
 
-  destroyArrow() {
-    if (!this.arrow) return;
-    if (this.arrow.x < 0 || this.arrow.x > this.scene.scale.width) {
-      this.arrow.destroy();
-      this.arrow = undefined;
-    }
+  updateArrows() {
+    this.arrows = this.arrows.filter((arrow) => {
+      arrow.x += arrow.getData("velocity");
+
+      const outOfBounds = arrow.x < 0 || arrow.x > this.scene.scale.width;
+      if (outOfBounds) {
+        arrow.destroy();
+        return false;
+      }
+
+      return true;
+    });
   }
 
   update() {
-    if (this.arrow) {
-      this.arrow.x += this.arrow.getData("velocity");
-
-      this.destroyArrow();
-    }
+    this.updateArrows();
 
     if (!this.archer || !this.keys || this.dead) return;
 
@@ -110,33 +134,26 @@ export class Archer {
       this.archer.play("archer_walk", true);
     }
 
-    // Handle Milly Attack
+    // Special melee attack
     else if (SHIFT.isDown) {
       this.canIdle = false;
       this.archer.play("archer_special", true);
-      this.archer.on("animationcomplete", () => {
-        this.canIdle = true;
-      });
     }
 
-    // Handle attack
+    // Ranged attack
     else if (SPACE.isDown) {
-      if (this.arrow) return;
       this.canIdle = false;
       this.archer.play("archer_attack", true);
-      this.archer.on("animationcomplete", () => {
-        this.canIdle = true;
-      });
     }
 
-    // Handle death
-    else if (W.isDown) {
+    // Death
+    else if (W.isDown && !this.dead) {
       this.canIdle = false;
       this.dead = true;
       this.archer.play("archer_death", true);
     }
 
-    // Handle idle state
+    // Idle
     else if (this.canIdle) {
       this.archer.play("archer_idle", true);
     }

@@ -7,6 +7,7 @@ export class Necromancer {
   private scene: Phaser.Scene;
   private necromancer?: Phaser.GameObjects.Sprite;
   private skull?: Phaser.GameObjects.Sprite;
+  private skulls: Phaser.GameObjects.Sprite[] = [];
   private canIdle: boolean = true;
   private dead: boolean = false;
 
@@ -44,6 +45,8 @@ export class Necromancer {
 
     this.animations();
 
+    // Fire Skull when custom frame of the attack animation plays
+
     this.necromancer.on(
       "animationupdate",
       (
@@ -52,6 +55,29 @@ export class Necromancer {
       ) => {
         if (anim.key === "necromancer_attack" && frame.index === 31) {
           this.spawnSkull(this.necromancer!.flipX);
+        }
+      }
+    );
+
+    this.necromancer.on(
+      "animationcomplete",
+      (anim: Phaser.Animations.Animation) => {
+        // Go to iddle after playing athis animations
+        if (["necromancer_attack", "necromancer_special"].includes(anim.key)) {
+          this.canIdle = true;
+        }
+
+        // Handle death fade-out and destroy
+        if (anim.key === "necromancer_death") {
+          this.scene.tweens.add({
+            targets: this.necromancer,
+            alpha: 0,
+            duration: 500,
+            onComplete: () => {
+              this.necromancer?.destroy();
+              this.necromancer = undefined;
+            },
+          });
         }
       }
     );
@@ -84,22 +110,26 @@ export class Necromancer {
     this.skull.setFlipX(direction);
 
     this.skull.setData("velocity", direction ? -4 : 4);
+
+    this.skulls.push(this.skull);
   }
 
-  destroySkull() {
-    if (!this.skull) return;
-    if (this.skull.x < 0 || this.skull.x > this.scene.scale.width) {
-      this.skull.destroy();
-      this.skull = undefined;
-    }
+  updateSkulls() {
+    this.skulls = this.skulls.filter((skull) => {
+      skull.x += skull.getData("velocity");
+
+      const outOfBounds = skull.x < 0 || skull.x > this.scene.scale.width;
+      if (outOfBounds) {
+        skull.destroy();
+        return false;
+      }
+
+      return true;
+    });
   }
 
   update() {
-    if (this.skull) {
-      this.skull.x += this.skull.getData("velocity");
-
-      this.destroySkull();
-    }
+    this.updateSkulls();
 
     if (!this.necromancer || !this.keys || this.dead) return;
 
@@ -119,23 +149,16 @@ export class Necromancer {
     else if (SHIFT.isDown) {
       this.canIdle = false;
       this.necromancer.play("necromancer_special", true);
-      this.necromancer.on("animationcomplete", () => {
-        this.canIdle = true;
-      });
     }
 
     // Handle attack
     else if (SPACE.isDown) {
-      if (this.skull) return;
       this.canIdle = false;
       this.necromancer.play("necromancer_attack", true);
-      this.necromancer.on("animationcomplete", () => {
-        this.canIdle = true;
-      });
     }
 
     // Handle death
-    else if (W.isDown) {
+    else if (W.isDown && !this.dead) {
       this.canIdle = false;
       this.dead = true;
       this.necromancer.play("necromancer_death", true);

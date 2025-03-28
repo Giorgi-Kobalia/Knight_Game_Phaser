@@ -69,7 +69,7 @@ export const paladin_constants = [
     animationKey: "paladin_hit",
     animConfiguration: {
       start: 0,
-      end: 11,
+      end: 5,
     },
     frameRate: 11,
     repeat: 0,

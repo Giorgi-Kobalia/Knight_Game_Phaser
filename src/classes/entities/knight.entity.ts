@@ -6,7 +6,7 @@ const KNIGHT = knight_constants;
 export class Knight {
   private scene: Phaser.Scene;
   private knight?: Phaser.GameObjects.Sprite;
-  private background: any;
+  private background: { update: (delta: number) => void };
   private canIdle: boolean = true;
   private dead: boolean = false;
 
@@ -40,6 +40,26 @@ export class Knight {
     };
 
     this.animations();
+
+    this.knight.on("animationcomplete", (anim: Phaser.Animations.Animation) => {
+      // Go to iddle after playing athis animations
+      if (["knight_attack"].includes(anim.key)) {
+        this.canIdle = true;
+      }
+
+      // Handle death fade-out and destroy
+      if (anim.key === "knight_death") {
+        this.scene.tweens.add({
+          targets: this.knight,
+          alpha: 0,
+          duration: 500,
+          onComplete: () => {
+            this.knight?.destroy();
+            this.knight = undefined;
+          },
+        });
+      }
+    });
   }
 
   animations() {
@@ -84,23 +104,12 @@ export class Knight {
     else if (SPACE.isDown) {
       this.canIdle = false;
       this.knight.play("knight_attack", true);
-
-      this.knight.on(
-        "animationcomplete",
-        (animation: Phaser.Animations.Animation) => {
-          if (animation.key === "knight_attack") {
-            this.canIdle = true;
-          }
-        }
-      );
     }
     // Handle death
-    else if (W.isDown) {
-      if (this.knight.anims.currentAnim?.key !== "knight_death") {
-        this.canIdle = false;
-        this.dead = true;
-        this.knight.play("knight_death", true);
-      }
+    else if (W.isDown && !this.dead) {
+      this.canIdle = false;
+      this.dead = true;
+      this.knight.play("knight_death", true);
     }
 
     // Handle idle state

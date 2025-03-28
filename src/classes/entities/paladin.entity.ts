@@ -38,6 +38,29 @@ export class Paladin {
     };
 
     this.animations();
+
+    this.paladin.on(
+      "animationcomplete",
+      (anim: Phaser.Animations.Animation) => {
+        // Go to iddle after playing athis animations
+        if (["paladin_attack", "paladin_hit"].includes(anim.key)) {
+          this.canIdle = true;
+        }
+
+        // Handle death fade-out and destroy
+        if (anim.key === "paladin_death") {
+          this.scene.tweens.add({
+            targets: this.paladin,
+            alpha: 0,
+            duration: 500,
+            onComplete: () => {
+              this.paladin?.destroy();
+              this.paladin = undefined;
+            },
+          });
+        }
+      }
+    );
   }
 
   animations() {
@@ -71,18 +94,12 @@ export class Paladin {
     else if (this.keys.SHIFT.isDown) {
       this.canIdle = false;
       this.paladin.play("paladin_hit", true);
-      this.paladin.on("animationcomplete", () => {
-        this.canIdle = true;
-      });
     }
 
     // Handle attack
     else if (this.keys.SPACE.isDown) {
       this.canIdle = false;
       this.paladin.play("paladin_attack", true);
-      this.paladin.on("animationcomplete", () => {
-        this.canIdle = true;
-      });
     }
 
     // Handle death
