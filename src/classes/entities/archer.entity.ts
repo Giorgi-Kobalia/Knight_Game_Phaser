@@ -12,13 +12,15 @@ export class Archer {
   private dead: boolean = false;
   private spawnPoint: number = 0;
   private velocityX: number = 3;
-  private reload: boolean = false;
+  private arrowReload: boolean = false;
+  private millyReload: boolean = false;
   private isAttacking: boolean = false;
   private spawnOrientation: "left" | "right" = "right";
 
   public hitbox?: Phaser.GameObjects.Rectangle;
   public range?: Phaser.GameObjects.Rectangle;
   public millyRange?: Phaser.GameObjects.Rectangle;
+  public attackHitbox?: Phaser.GameObjects.Rectangle;
   public arrowHitbox?: Phaser.GameObjects.Rectangle;
 
   constructor(scene: Phaser.Scene) {
@@ -60,15 +62,28 @@ export class Archer {
       }
     );
 
+    this.archer.on("animationupdate", (anim: Phaser.Animations.Animation) => {
+      if (anim.key !== "archer_special") {
+        if (this.attackHitbox) {
+          this.attackHitbox.destroy();
+          this.attackHitbox = undefined;
+        }
+      }
+    });
+
     this.archer.on("animationcomplete", (anim: Phaser.Animations.Animation) => {
       if (["archer_attack", "archer_special"].includes(anim.key)) {
         this.canIdle = true;
         this.isAttacking = false;
-        this.reload = true;
+        this.arrowReload = true;
+        this.millyReload = true;
 
         setTimeout(() => {
-          this.reload = false;
-        }, 5000);
+          this.arrowReload = false;
+        }, 4000);
+        setTimeout(() => {
+          this.millyReload = false;
+        }, 2000);
       }
 
       if (anim.key === "archer_death") {
@@ -113,7 +128,7 @@ export class Archer {
     this.millyRange = this.scene.add.rectangle(
       this.archer.x,
       this.archer.y,
-      180,
+      120,
       10,
       0x00ff00,
       1
@@ -188,14 +203,26 @@ export class Archer {
   }
 
   special() {
-    if (!this.archer) return;
+    if (!this.archer || this.millyReload) return; // Prevent special if already attacking
     this.isAttacking = true;
     this.canIdle = false;
     this.playAnimation("archer_special", true);
+
+    if (!this.attackHitbox) {
+      this.attackHitbox = this.scene.add.rectangle(
+        this.archer.x,
+        this.archer.y,
+        60,
+        100,
+        0xffff00,
+        1
+      );
+      this.scene.physics.add.existing(this.attackHitbox);
+    }
   }
 
   attack() {
-    if (!this.archer || this.reload) return;
+    if (!this.archer || this.arrowReload) return; // Prevent attack if already attacking
     this.isAttacking = true;
     this.canIdle = false;
     this.playAnimation("archer_attack", true);
@@ -236,6 +263,13 @@ export class Archer {
     this.updateArrowPosition();
 
     if (!this.archer || this.dead) return;
+
+    if (this.attackHitbox) {
+      this.attackHitbox.setPosition(
+        this.archer.flipX ? this.archer.x - 60 : this.archer.x + 60,
+        this.archer.y
+      );
+    }
 
     this.hitbox?.setPosition(
       this.archer.flipX ? this.archer.x + 20 : this.archer.x - 20,
@@ -319,7 +353,6 @@ export class Archer {
         knight.shieldHitbox.getBounds()
       )
     ) {
-      console.log("shield");
       this.destroyArrow();
     }
 
@@ -333,8 +366,19 @@ export class Archer {
         knight.hitbox.getBounds()
       )
     ) {
-      console.log("body");
       this.destroyArrow();
+      // knight.death()
+    }
+
+    if (
+      knight &&
+      this.attackHitbox &&
+      knight.hitbox &&
+      Phaser.Geom.Intersects.RectangleToRectangle(
+        this.attackHitbox.getBounds(),
+        knight.hitbox.getBounds()
+      )
+    ) {
       knight.death()
     }
   }
