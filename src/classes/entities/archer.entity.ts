@@ -131,7 +131,7 @@ export class Archer {
       120,
       10,
       0x00ff00,
-      1
+      0
     );
 
     this.scene.physics.add.existing(this.millyRange);
@@ -215,7 +215,7 @@ export class Archer {
         60,
         100,
         0xffff00,
-        1
+        0
       );
       this.scene.physics.add.existing(this.attackHitbox);
     }
@@ -379,7 +379,16 @@ export class Archer {
         knight.hitbox.getBounds()
       )
     ) {
-      knight.death()
+      if (
+        knight.shieldHitbox &&
+        Phaser.Geom.Intersects.RectangleToRectangle(
+          this.attackHitbox.getBounds(),
+          knight.shieldHitbox.getBounds()
+        )
+      ) {
+        return;
+      }
+      knight.death();
     }
   }
 }
