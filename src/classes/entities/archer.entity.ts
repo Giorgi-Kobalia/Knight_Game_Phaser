@@ -7,12 +7,19 @@ const ARCHER = archer_constants;
 export class Archer {
   private scene: Phaser.Scene;
   private archer?: Phaser.GameObjects.Sprite;
-  private arrows: Phaser.GameObjects.Sprite[] = [];
+  private arrow?: Phaser.GameObjects.Sprite;
   private canIdle: boolean = true;
   private dead: boolean = false;
   private spawnPoint: number = 0;
-  private velocityX: number = 2;
+  private velocityX: number = 3;
+  private reload: boolean = false;
+  private isAttacking: boolean = false;
   private spawnOrientation: "left" | "right" = "right";
+
+  public hitbox?: Phaser.GameObjects.Rectangle;
+  public range?: Phaser.GameObjects.Rectangle;
+  public millyRange?: Phaser.GameObjects.Rectangle;
+  public arrowHitbox?: Phaser.GameObjects.Rectangle;
 
   constructor(scene: Phaser.Scene) {
     this.scene = scene;
@@ -35,8 +42,9 @@ export class Archer {
     this.archer.setFlipX(this.spawnOrientation === "left");
 
     // Set velocity direction based on spawn orientation
-    this.velocityX = this.spawnOrientation === "left" ? -2 : 2;
+    this.velocityX = this.spawnOrientation === "left" ? -3 : 3;
 
+    this.addHitboxes();
     this.animations();
 
     // Fire arrow when custom frame of the attack animation plays
@@ -55,6 +63,12 @@ export class Archer {
     this.archer.on("animationcomplete", (anim: Phaser.Animations.Animation) => {
       if (["archer_attack", "archer_special"].includes(anim.key)) {
         this.canIdle = true;
+        this.isAttacking = false;
+        this.reload = true;
+
+        setTimeout(() => {
+          this.reload = false;
+        }, 5000);
       }
 
       if (anim.key === "archer_death") {
@@ -69,8 +83,43 @@ export class Archer {
         });
       }
     });
+  }
 
-    this.attack();
+  addHitboxes() {
+    if (!this.archer) return;
+
+    this.hitbox = this.scene.add.rectangle(
+      this.archer.x,
+      this.archer.y,
+      40,
+      120,
+      0xff0000,
+      0
+    );
+
+    this.scene.physics.add.existing(this.hitbox);
+
+    this.range = this.scene.add.rectangle(
+      this.archer.x,
+      this.archer.y,
+      800,
+      10,
+      0x00ff00,
+      0
+    );
+
+    this.scene.physics.add.existing(this.range);
+
+    this.millyRange = this.scene.add.rectangle(
+      this.archer.x,
+      this.archer.y,
+      180,
+      10,
+      0x00ff00,
+      1
+    );
+
+    this.scene.physics.add.existing(this.millyRange);
   }
 
   animations() {
@@ -90,25 +139,43 @@ export class Archer {
   spawnArrow(direction: boolean) {
     if (!this.archer) return;
 
-    const arrow = this.scene.add.sprite(
+    this.arrow = this.scene.add.sprite(
       this.archer.x,
       this.archer.y - 30,
       "Arrow"
     );
-    arrow.scale = 3;
-    arrow.setFlipX(direction);
-    arrow.setData("velocity", direction ? -5 : 5);
+    this.arrow.scale = 3;
+    this.arrow.setFlipX(direction);
+    this.arrow.setData("velocity", direction ? -5 : 5);
 
-    this.arrows.push(arrow);
+    this.arrowHitbox = this.scene.add.rectangle(
+      this.arrow.x,
+      this.arrow.y,
+      this.arrow.width * 3,
+      this.arrow.height * 3,
+      0xff0000,
+      0
+    );
+
+    this.scene.physics.add.existing(this.arrowHitbox);
   }
 
-  updateArrows() {
-    this.arrows.forEach((arrow) => {
-      arrow.x += arrow.getData("velocity");
-      if (arrow.x < 0 || arrow.x > this.scene.scale.width) {
-        arrow.destroy();
-      }
-    });
+  updateArrowPosition() {
+    if (!this.arrow) return;
+    this.arrow.x += this.arrow.getData("velocity");
+    this.arrowHitbox?.setPosition(this.arrow.x, this.arrow.y);
+  }
+
+  destroyArrow() {
+    if (!this.arrow) return;
+
+    this.arrow.destroy();
+    this.arrow = undefined;
+
+    if (this.arrowHitbox) {
+      this.arrowHitbox.destroy();
+      this.arrowHitbox = undefined;
+    }
   }
 
   playAnimation(key: string, loop: boolean = true) {
@@ -117,57 +184,66 @@ export class Archer {
   }
 
   idle() {
-    this.playAnimation("archer_idle");
+    this.playAnimation("archer_idle", true);
   }
 
   special() {
     if (!this.archer) return;
+    this.isAttacking = true;
     this.canIdle = false;
-    this.playAnimation("archer_special");
+    this.playAnimation("archer_special", true);
   }
 
   attack() {
-    if (!this.archer) return;
+    if (!this.archer || this.reload) return;
+    this.isAttacking = true;
     this.canIdle = false;
-    this.playAnimation("archer_attack");
+    this.playAnimation("archer_attack", true);
   }
 
   death() {
     if (!this.archer || this.dead) return;
     this.canIdle = false;
     this.dead = true;
-    this.playAnimation("archer_death");
+    this.playAnimation("archer_death", true);
+    this.hitbox?.destroy();
+    this.millyRange?.destroy();
+    this.range?.destroy();
   }
 
   walk() {
-    if (!this.archer) return;
+    if (!this.archer || this.isAttacking) return;
 
     this.canIdle = false;
 
-    // Get the Knight object
     const knight = (this.scene as any).characters["knight"] as Knight;
 
-    if (!knight || !knight.knight) return; // Ensure knight is valid
+    if (!knight || !knight.knight) return;
 
-    // Check the position of the Knight relative to the Archer
     const directionToMove = knight.knight.x - this.archer.x;
 
     if (directionToMove < 0) {
-      this.velocityX = -2;
-      this.archer.setFlipX(true);
+      this.velocityX = -3;
     } else if (directionToMove > 0) {
-      this.velocityX = 2;
-      this.archer.setFlipX(false);
+      this.velocityX = 3;
     }
 
-    this.playAnimation("archer_walk");
+    this.playAnimation("archer_walk", true);
     this.archer.x += this.velocityX;
   }
 
   update() {
-    this.updateArrows();
+    this.updateArrowPosition();
 
     if (!this.archer || this.dead) return;
+
+    this.hitbox?.setPosition(
+      this.archer.flipX ? this.archer.x + 20 : this.archer.x - 20,
+      this.archer.y
+    );
+
+    this.range?.setPosition(this.archer.x, this.archer.y);
+    this.millyRange?.setPosition(this.archer.x, this.archer.y);
 
     if (this.canIdle) {
       this.idle();
@@ -176,19 +252,90 @@ export class Archer {
     // Check if Archer collides with Knight
     const knight = (this.scene as any).characters["knight"] as Knight;
 
+    if (knight) {
+      // First check if the Knight is in military range (prioritize this for special attack)
+      if (
+        Phaser.Geom.Intersects.RectangleToRectangle(
+          this.millyRange!.getBounds(),
+          knight.range!.getBounds()
+        )
+      ) {
+        // Knight is within military range (special attack)
+        const directionToMove = knight.knight!.x - this.archer.x;
+        if (directionToMove < 0) {
+          this.archer.setFlipX(true);
+        } else if (directionToMove > 0) {
+          this.archer.setFlipX(false);
+        }
+        this.velocityX = 0; // Stop moving
+        this.canIdle = true; // Allow idle animation or other logic
+
+        this.special(); // Perform special attack
+      }
+      // If not in military range, check if within standard range (perform arrow attack)
+      else if (
+        Phaser.Geom.Intersects.RectangleToRectangle(
+          this.range!.getBounds(),
+          knight.range!.getBounds()
+        )
+      ) {
+        // Knight is within standard range (arrow attack)
+        const directionToMove = knight.knight!.x - this.archer.x;
+        if (directionToMove < 0) {
+          this.archer.setFlipX(true);
+        } else if (directionToMove > 0) {
+          this.archer.setFlipX(false);
+        }
+        this.velocityX = 0; // Stop moving
+        this.canIdle = true; // Allow idle animation or other logic
+
+        this.attack(); // Perform arrow attack
+      } else {
+        // If outside both ranges, move towards the Knight
+        this.walk();
+      }
+    }
+
+    // Death condition: collision with knight's attack hitbox
     if (
       knight &&
+      knight.attackHitbox &&
       Phaser.Geom.Intersects.RectangleToRectangle(
-        this.archer.getBounds(),
-        knight.knight!.getBounds()
+        this.hitbox!.getBounds(),
+        knight.attackHitbox.getBounds()
       )
     ) {
-      // Collision detected
-      this.velocityX = 0; // Stop moving
-      this.canIdle = true; // Allow idle animation or other logic
-    } else {
-      // Continue moving towards the Knight based on its position
-      this.walk(); // Move the Archer towards the Knight's position
+      this.death();
+    }
+
+    // Arrow colliding with shield (destroy the arrow, do NOT cause knight's death)
+    if (
+      knight &&
+      this.arrow &&
+      this.arrowHitbox &&
+      knight.shieldHitbox &&
+      Phaser.Geom.Intersects.RectangleToRectangle(
+        this.arrowHitbox.getBounds(),
+        knight.shieldHitbox.getBounds()
+      )
+    ) {
+      console.log("shield");
+      this.destroyArrow();
+    }
+
+    if (
+      knight &&
+      this.arrow &&
+      this.arrowHitbox &&
+      knight.hitbox &&
+      Phaser.Geom.Intersects.RectangleToRectangle(
+        this.arrowHitbox.getBounds(),
+        knight.hitbox.getBounds()
+      )
+    ) {
+      console.log("body");
+      this.destroyArrow();
+      knight.death()
     }
   }
 }
