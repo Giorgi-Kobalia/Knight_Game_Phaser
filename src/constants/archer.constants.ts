@@ -59,19 +59,4 @@ export const archer_constants = [
     frameRate: 10,
     repeat: 0,
   },
-  {
-    spriteKey: "Archer_Special",
-    spritePath: "./img/Archer/Archer_Special.png",
-    spriteConfiguration: {
-      frameWidth: 128,
-      frameHeight: 128,
-    },
-    animationKey: "archer_special",
-    animConfiguration: {
-      start: 0,
-      end: 27,
-    },
-    frameRate: 15,
-    repeat: 0,
-  },
 ];

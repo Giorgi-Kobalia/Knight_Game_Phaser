@@ -13,14 +13,11 @@ export class Archer {
   private spawnPoint: number = 0;
   private velocityX: number = 3;
   private arrowReload: boolean = false;
-  private millyReload: boolean = false;
   private isAttacking: boolean = false;
   private spawnOrientation: "left" | "right" = "right";
 
   public hitbox?: Phaser.GameObjects.Rectangle;
   public range?: Phaser.GameObjects.Rectangle;
-  public millyRange?: Phaser.GameObjects.Rectangle;
-  public attackHitbox?: Phaser.GameObjects.Rectangle;
   public arrowHitbox?: Phaser.GameObjects.Rectangle;
 
   constructor(scene: Phaser.Scene) {
@@ -62,28 +59,15 @@ export class Archer {
       }
     );
 
-    this.archer.on("animationupdate", (anim: Phaser.Animations.Animation) => {
-      if (anim.key !== "archer_special") {
-        if (this.attackHitbox) {
-          this.attackHitbox.destroy();
-          this.attackHitbox = undefined;
-        }
-      }
-    });
-
     this.archer.on("animationcomplete", (anim: Phaser.Animations.Animation) => {
       if (["archer_attack", "archer_special"].includes(anim.key)) {
         this.canIdle = true;
         this.isAttacking = false;
         this.arrowReload = true;
-        this.millyReload = true;
 
         setTimeout(() => {
           this.arrowReload = false;
         }, 4000);
-        setTimeout(() => {
-          this.millyReload = false;
-        }, 2000);
       }
 
       if (anim.key === "archer_death") {
@@ -124,17 +108,6 @@ export class Archer {
     );
 
     this.scene.physics.add.existing(this.range);
-
-    this.millyRange = this.scene.add.rectangle(
-      this.archer.x,
-      this.archer.y,
-      120,
-      10,
-      0x00ff00,
-      0
-    );
-
-    this.scene.physics.add.existing(this.millyRange);
   }
 
   animations() {
@@ -202,25 +175,6 @@ export class Archer {
     this.playAnimation("archer_idle", true);
   }
 
-  special() {
-    if (!this.archer || this.millyReload) return; // Prevent special if already attacking
-    this.isAttacking = true;
-    this.canIdle = false;
-    this.playAnimation("archer_special", true);
-
-    if (!this.attackHitbox) {
-      this.attackHitbox = this.scene.add.rectangle(
-        this.archer.x,
-        this.archer.y,
-        60,
-        100,
-        0xffff00,
-        0
-      );
-      this.scene.physics.add.existing(this.attackHitbox);
-    }
-  }
-
   attack() {
     if (!this.archer || this.arrowReload) return; // Prevent attack if already attacking
     this.isAttacking = true;
@@ -234,7 +188,6 @@ export class Archer {
     this.dead = true;
     this.playAnimation("archer_death", true);
     this.hitbox?.destroy();
-    this.millyRange?.destroy();
     this.range?.destroy();
   }
 
@@ -264,20 +217,12 @@ export class Archer {
 
     if (!this.archer || this.dead) return;
 
-    if (this.attackHitbox) {
-      this.attackHitbox.setPosition(
-        this.archer.flipX ? this.archer.x - 60 : this.archer.x + 60,
-        this.archer.y
-      );
-    }
-
     this.hitbox?.setPosition(
       this.archer.flipX ? this.archer.x + 20 : this.archer.x - 20,
       this.archer.y
     );
 
     this.range?.setPosition(this.archer.x, this.archer.y);
-    this.millyRange?.setPosition(this.archer.x, this.archer.y);
 
     if (this.canIdle) {
       this.idle();
@@ -286,48 +231,25 @@ export class Archer {
     // Check if Archer collides with Knight
     const knight = (this.scene as any).characters["knight"] as Knight;
 
-    if (knight) {
-      // First check if the Knight is in military range (prioritize this for special attack)
-      if (
-        Phaser.Geom.Intersects.RectangleToRectangle(
-          this.millyRange!.getBounds(),
-          knight.range!.getBounds()
-        )
-      ) {
-        // Knight is within military range (special attack)
-        const directionToMove = knight.knight!.x - this.archer.x;
-        if (directionToMove < 0) {
-          this.archer.setFlipX(true);
-        } else if (directionToMove > 0) {
-          this.archer.setFlipX(false);
-        }
-        this.velocityX = 0; // Stop moving
-        this.canIdle = true; // Allow idle animation or other logic
-
-        this.special(); // Perform special attack
+    if (
+      knight &&
+      Phaser.Geom.Intersects.RectangleToRectangle(
+        this.range!.getBounds(),
+        knight.range!.getBounds()
+      )
+    ) {
+      const directionToMove = knight.knight!.x - this.archer.x;
+      if (directionToMove < 0) {
+        this.archer.setFlipX(true);
+      } else if (directionToMove > 0) {
+        this.archer.setFlipX(false);
       }
-      // If not in military range, check if within standard range (perform arrow attack)
-      else if (
-        Phaser.Geom.Intersects.RectangleToRectangle(
-          this.range!.getBounds(),
-          knight.range!.getBounds()
-        )
-      ) {
-        // Knight is within standard range (arrow attack)
-        const directionToMove = knight.knight!.x - this.archer.x;
-        if (directionToMove < 0) {
-          this.archer.setFlipX(true);
-        } else if (directionToMove > 0) {
-          this.archer.setFlipX(false);
-        }
-        this.velocityX = 0; // Stop moving
-        this.canIdle = true; // Allow idle animation or other logic
+      this.velocityX = 0; // Stop moving
+      this.canIdle = true; // Allow idle animation or other logic
 
-        this.attack(); // Perform arrow attack
-      } else {
-        // If outside both ranges, move towards the Knight
-        this.walk();
-      }
+      this.attack(); // Perform arrow attack
+    } else {
+      this.walk();
     }
 
     // Death condition: collision with knight's attack hitbox
@@ -367,27 +289,6 @@ export class Archer {
       )
     ) {
       this.destroyArrow();
-      // knight.death()
-    }
-
-    if (
-      knight &&
-      this.attackHitbox &&
-      knight.hitbox &&
-      Phaser.Geom.Intersects.RectangleToRectangle(
-        this.attackHitbox.getBounds(),
-        knight.hitbox.getBounds()
-      )
-    ) {
-      if (
-        knight.shieldHitbox &&
-        Phaser.Geom.Intersects.RectangleToRectangle(
-          this.attackHitbox.getBounds(),
-          knight.shieldHitbox.getBounds()
-        )
-      ) {
-        return;
-      }
       knight.death();
     }
   }
