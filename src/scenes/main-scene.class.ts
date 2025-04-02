@@ -91,7 +91,7 @@ export class MainScene extends Phaser.Scene {
     });
 
     this.time.addEvent({
-      delay: 5000, // Spawn every 5 seconds
+      delay: 5000,
       callback: this.spawnEnemy,
       callbackScope: this,
       loop: true,
@@ -99,11 +99,14 @@ export class MainScene extends Phaser.Scene {
   }
 
   spawnEnemy() {
-    const EnemyClass = Phaser.Utils.Array.GetRandom(this.enemyPool); // Pick a random enemy class
+    const EnemyClass = Phaser.Utils.Array.GetRandom(this.enemyPool);
     const enemy = new EnemyClass(this);
     enemy.init();
 
-    // Store enemy in the characters object so it gets updated
+    if (enemy.archer) {
+      this.children.moveTo(enemy.archer, 1);
+    }
+
     this.characters[`enemy_${this.enemyCounter++}`] = enemy;
   }
 
