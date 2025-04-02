@@ -24,27 +24,22 @@ export class Archer {
   }
 
   init() {
-    // Determine spawn point and orientation based on it
     this.spawnPoint = Math.random() < 0.5 ? 0 : this.scene.cameras.main.width;
     this.spawnOrientation = this.spawnPoint === 0 ? "right" : "left";
 
-    // Create archer sprite
     this.archer = this.scene.add.sprite(
       this.spawnPoint,
       480,
       ARCHER[0].spriteKey
     );
+
     this.archer.scale = 3;
 
-    // Flip the sprite based on spawn orientation
     this.archer.setFlipX(this.spawnOrientation === "left");
-
-    // Set velocity direction based on spawn orientation
 
     this.addHitboxes();
     this.animations();
 
-    // Fire arrow when custom frame of the attack animation plays
     this.archer.on(
       "animationupdate",
       (
@@ -58,7 +53,7 @@ export class Archer {
     );
 
     this.archer.on("animationcomplete", (anim: Phaser.Animations.Animation) => {
-      if (["archer_attack", "archer_special"].includes(anim.key)) {
+      if (["archer_attack"].includes(anim.key)) {
         this.canIdle = true;
         this.isAttacking = false;
         this.arrowReload = true;
@@ -190,7 +185,7 @@ export class Archer {
   }
 
   attack() {
-    if (!this.archer || this.arrowReload) return; // Prevent attack if already attacking
+    if (!this.archer || this.arrowReload) return;
     this.isAttacking = true;
     this.canIdle = false;
     this.playAnimation("archer_attack", true);
@@ -224,7 +219,6 @@ export class Archer {
   }
 
   knightInteractions() {
-    // Check if Archer collides with Knight
     const knight = (this.scene as any).characters["knight"] as Knight;
 
     if (
@@ -246,7 +240,6 @@ export class Archer {
       this.walk(this.archer!.flipX ? -3 : 3);
     }
 
-    // Death condition: collision with knight's attack hitbox
     if (
       knight &&
       knight.attackHitbox &&
@@ -258,7 +251,6 @@ export class Archer {
       this.death();
     }
 
-    // Arrow colliding with shield (destroy the arrow, do NOT cause knight's death)
     if (
       knight &&
       this.arrow &&
@@ -283,7 +275,7 @@ export class Archer {
       )
     ) {
       this.destroyArrow();
-      // knight.death();
+      knight.death();
     }
   }
 

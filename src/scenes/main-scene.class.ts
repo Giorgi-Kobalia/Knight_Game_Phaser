@@ -33,7 +33,13 @@ export class MainScene extends Phaser.Scene {
     [key: string]: Knight | Archer | Necromancer | Paladin | Ronin;
   } = {};
 
-  private enemyPool: (typeof Archer)[] = [Archer];
+  private enemyPool: (
+    | typeof Archer
+    | typeof Necromancer
+    | typeof Paladin
+    | typeof Ronin
+  )[] = [Archer, Necromancer];
+
   private enemyCounter: number = 0;
 
   constructor() {
@@ -78,7 +84,6 @@ export class MainScene extends Phaser.Scene {
     this.background = new Background(this);
 
     const characters: CharacterConfig[] = [
-      { name: "archer", classRef: Archer },
       { name: "knight", classRef: Knight },
     ];
 
@@ -102,10 +107,6 @@ export class MainScene extends Phaser.Scene {
     const EnemyClass = Phaser.Utils.Array.GetRandom(this.enemyPool);
     const enemy = new EnemyClass(this);
     enemy.init();
-
-    if (enemy.archer) {
-      this.children.moveTo(enemy.archer, 1);
-    }
 
     this.characters[`enemy_${this.enemyCounter++}`] = enemy;
   }
