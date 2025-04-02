@@ -103,7 +103,7 @@ export class Knight {
     this.range = this.scene.add.rectangle(
       this.knight?.x,
       this.knight?.y,
-      180,
+      150,
       10,
       0x00ff00,
       0

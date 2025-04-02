@@ -77,22 +77,6 @@ export class Archer {
     });
   }
 
-  getAllBounds() {
-    const bounds: { [key: string]: Phaser.Geom.Rectangle | null } = {};
-
-    const hitboxes = [
-      { key: "hitbox", hitbox: this.hitbox },
-      { key: "arrowHitbox", hitbox: this.arrowHitbox },
-      { key: "range", hitbox: this.range },
-    ];
-
-    hitboxes.forEach(({ key, hitbox }) => {
-      bounds[key] = hitbox ? hitbox.getBounds() : null;
-    });
-
-    return bounds;
-  }
-
   addHitboxes() {
     if (!this.archer) return;
 

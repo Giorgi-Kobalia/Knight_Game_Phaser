@@ -80,22 +80,6 @@ export class Necromancer {
     );
   }
 
-  getAllBounds() {
-    const bounds: { [key: string]: Phaser.Geom.Rectangle | null } = {};
-
-    const hitboxes = [
-      { key: "hitbox", hitbox: this.hitbox },
-      { key: "skullHitbox", hitbox: this.skullHitbox },
-      { key: "range", hitbox: this.range },
-    ];
-
-    hitboxes.forEach(({ key, hitbox }) => {
-      bounds[key] = hitbox ? hitbox.getBounds() : null;
-    });
-
-    return bounds;
-  }
-
   addHitboxes() {
     if (!this.necromancer) return;
 
@@ -113,7 +97,7 @@ export class Necromancer {
     this.range = this.scene.add.rectangle(
       this.necromancer.x,
       this.necromancer.y,
-      1100,
+      1400,
       10,
       0x00ff00,
       0
