@@ -104,6 +104,10 @@ export class MainScene extends Phaser.Scene {
   }
 
   spawnEnemy() {
+    const knight = this.characters["knight"] as Knight;
+
+    if (knight && knight.dead) return;
+
     const EnemyClass = Phaser.Utils.Array.GetRandom(this.enemyPool);
     const enemy = new EnemyClass(this);
     enemy.init();

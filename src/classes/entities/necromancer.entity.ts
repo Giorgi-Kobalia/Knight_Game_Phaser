@@ -46,8 +46,12 @@ export class Necromancer {
         anim: Phaser.Animations.Animation,
         frame: Phaser.Animations.AnimationFrame
       ) => {
-        if (anim.key === "necromancer_attack" && frame.index === 31) {
-          this.spawnSkull(this.necromancer!.flipX);
+        if (
+          this.necromancer &&
+          anim.key === "necromancer_attack" &&
+          frame.index === 31
+        ) {
+          this.spawnSkull(this.necromancer.flipX);
         }
       }
     );
@@ -211,30 +215,35 @@ export class Necromancer {
   knightInteractions() {
     const knight = (this.scene as any).characters["knight"] as Knight;
 
+    if (!this.necromancer || !knight.knight) return;
+
     if (
       knight &&
+      this.range &&
+      knight.range &&
       Phaser.Geom.Intersects.RectangleToRectangle(
-        this.range!.getBounds(),
-        knight.range!.getBounds()
+        this.range.getBounds(),
+        knight.range.getBounds()
       )
     ) {
-      const directionToMove = knight.knight!.x - this.necromancer!.x;
+      const directionToMove = knight.knight.x - this.necromancer.x;
       if (directionToMove < 0) {
-        this.necromancer!.setFlipX(true);
+        this.necromancer.setFlipX(true);
       } else if (directionToMove > 0) {
-        this.necromancer!.setFlipX(false);
+        this.necromancer.setFlipX(false);
       }
       this.canIdle = true;
       this.attack();
     } else {
-      this.walk(this.necromancer!.flipX ? -3 : 3);
+      this.walk(this.necromancer.flipX ? -3 : 3);
     }
 
     if (
       knight &&
+      this.hitbox &&
       knight.attackHitbox &&
       Phaser.Geom.Intersects.RectangleToRectangle(
-        this.hitbox!.getBounds(),
+        this.hitbox.getBounds(),
         knight.attackHitbox.getBounds()
       )
     ) {

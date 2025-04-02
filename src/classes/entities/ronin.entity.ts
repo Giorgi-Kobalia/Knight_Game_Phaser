@@ -171,6 +171,8 @@ export class Ronin {
   knightInteractions() {
     const knight = (this.scene as any).characters["knight"] as Knight;
 
+    if (!this.ronin || !knight.knight) return;
+
     if (
       knight &&
       Phaser.Geom.Intersects.RectangleToRectangle(
@@ -178,23 +180,24 @@ export class Ronin {
         knight.range!.getBounds()
       )
     ) {
-      const directionToMove = knight.knight!.x - this.ronin!.x;
+      const directionToMove = knight.knight.x - this.ronin.x;
       if (directionToMove < 0) {
-        this.ronin!.setFlipX(true);
+        this.ronin.setFlipX(true);
       } else if (directionToMove > 0) {
-        this.ronin!.setFlipX(false);
+        this.ronin.setFlipX(false);
       }
       this.canIdle = true;
       this.attack();
     } else {
-      this.walk(this.ronin!.flipX ? -6 : 6);
+      this.walk(this.ronin.flipX ? -6 : 6);
     }
 
     if (
       knight &&
+      this.hitbox &&
       knight.attackHitbox &&
       Phaser.Geom.Intersects.RectangleToRectangle(
-        this.hitbox!.getBounds(),
+        this.hitbox.getBounds(),
         knight.attackHitbox.getBounds()
       )
     ) {

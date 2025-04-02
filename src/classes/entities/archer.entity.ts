@@ -46,8 +46,8 @@ export class Archer {
         anim: Phaser.Animations.Animation,
         frame: Phaser.Animations.AnimationFrame
       ) => {
-        if (anim.key === "archer_attack" && frame.index === 9) {
-          this.spawnArrow(this.archer!.flipX);
+        if (this.archer && anim.key === "archer_attack" && frame.index === 9) {
+          this.spawnArrow(this.archer.flipX);
         }
       }
     );
@@ -205,30 +205,35 @@ export class Archer {
   knightInteractions() {
     const knight = (this.scene as any).characters["knight"] as Knight;
 
+    if (!this.archer || !knight.knight) return;
+
     if (
       knight &&
+      this.range &&
+      knight.range &&
       Phaser.Geom.Intersects.RectangleToRectangle(
-        this.range!.getBounds(),
-        knight.range!.getBounds()
+        this.range.getBounds(),
+        knight.range.getBounds()
       )
     ) {
-      const directionToMove = knight.knight!.x - this.archer!.x;
+      const directionToMove = knight.knight.x - this.archer.x;
       if (directionToMove < 0) {
-        this.archer!.setFlipX(true);
+        this.archer.setFlipX(true);
       } else if (directionToMove > 0) {
-        this.archer!.setFlipX(false);
+        this.archer.setFlipX(false);
       }
       this.canIdle = true;
       this.attack();
     } else {
-      this.walk(this.archer!.flipX ? -3 : 3);
+      this.walk(this.archer.flipX ? -3 : 3);
     }
 
     if (
       knight &&
+      this.hitbox &&
       knight.attackHitbox &&
       Phaser.Geom.Intersects.RectangleToRectangle(
-        this.hitbox!.getBounds(),
+        this.hitbox.getBounds(),
         knight.attackHitbox.getBounds()
       )
     ) {

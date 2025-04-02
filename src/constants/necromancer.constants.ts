@@ -59,19 +59,4 @@ export const necromancer_constants = [
     frameRate: 18,
     repeat: 0,
   },
-  {
-    spriteKey: "Necromancer_Special",
-    spritePath: "./img/Necromancer/Necromancer_Special.png",
-    spriteConfiguration: {
-      frameWidth: 128,
-      frameHeight: 128,
-    },
-    animationKey: "necromancer_special",
-    animConfiguration: {
-      start: 0,
-      end: 19,
-    },
-    frameRate: 12,
-    repeat: 0,
-  },
 ];
