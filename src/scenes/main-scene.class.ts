@@ -33,6 +33,9 @@ export class MainScene extends Phaser.Scene {
     [key: string]: Knight | Archer | Necromancer | Paladin | Ronin;
   } = {};
 
+  private enemyPool: (typeof Archer)[] = [Archer];
+  private enemyCounter: number = 0;
+
   constructor() {
     super("MainScene");
   }
@@ -75,9 +78,6 @@ export class MainScene extends Phaser.Scene {
     this.background = new Background(this);
 
     const characters: CharacterConfig[] = [
-      // { name: "necromancer", classRef: Necromancer },
-      // { name: "paladin", classRef: Paladin },
-      // { name: "ronin", classRef: Ronin },
       { name: "archer", classRef: Archer },
       { name: "knight", classRef: Knight },
     ];
@@ -89,6 +89,22 @@ export class MainScene extends Phaser.Scene {
       characterInstance.init();
       this.characters[character.name] = characterInstance;
     });
+
+    this.time.addEvent({
+      delay: 5000, // Spawn every 5 seconds
+      callback: this.spawnEnemy,
+      callbackScope: this,
+      loop: true,
+    });
+  }
+
+  spawnEnemy() {
+    const EnemyClass = Phaser.Utils.Array.GetRandom(this.enemyPool); // Pick a random enemy class
+    const enemy = new EnemyClass(this);
+    enemy.init();
+
+    // Store enemy in the characters object so it gets updated
+    this.characters[`enemy_${this.enemyCounter++}`] = enemy;
   }
 
   update() {
