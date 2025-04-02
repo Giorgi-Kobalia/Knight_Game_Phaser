@@ -145,6 +145,11 @@ export class Ronin {
     this.playAnimation("ronin_death", true);
     this.hitbox?.destroy();
     this.range?.destroy();
+
+    if (this.attackHitbox) {
+      this.attackHitbox.destroy();
+      this.attackHitbox = undefined;
+    }
   }
 
   walk(speed: number = 0) {
@@ -204,16 +209,29 @@ export class Ronin {
       this.death();
     }
 
-    if (
-      knight &&
-      this.attackHitbox &&
-      knight.hitbox &&
-      Phaser.Geom.Intersects.RectangleToRectangle(
-        this.attackHitbox.getBounds(),
-        knight.hitbox.getBounds()
-      )
-    ) {
-      knight.death();
+    if (knight && this.attackHitbox) {
+      const attackBounds = this.attackHitbox.getBounds();
+
+      // Проверяем, попал ли удар в щит
+      const hitShield =
+        knight.shieldHitbox &&
+        Phaser.Geom.Intersects.RectangleToRectangle(
+          attackBounds,
+          knight.shieldHitbox.getBounds()
+        );
+
+      // Если удар НЕ попал в щит, проверяем урон по телу рыцаря
+      if (!hitShield && knight.hitbox) {
+        const hitKnight = Phaser.Geom.Intersects.RectangleToRectangle(
+          attackBounds,
+          knight.hitbox.getBounds()
+        );
+
+        if (hitKnight) {
+          // Рыцарь получает урон
+          knight.death();
+        }
+      }
     }
   }
 

@@ -190,6 +190,11 @@ export class Knight {
     this.canIdle = false;
     this.dead = true;
     this.knight.play("knight_death", true);
+
+    if (this.attackHitbox) {
+      this.attackHitbox.destroy();
+      this.attackHitbox = undefined;
+    }
   }
 
   changeHitboxPosition() {
