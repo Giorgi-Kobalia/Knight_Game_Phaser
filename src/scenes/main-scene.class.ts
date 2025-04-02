@@ -33,12 +33,6 @@ export class MainScene extends Phaser.Scene {
     [key: string]: Knight | Archer | Necromancer | Paladin | Ronin;
   } = {};
 
-  private knightBounds: { [key: string]: Phaser.Geom.Rectangle | null } | null =
-    null;
-
-  private archerBounds: { [key: string]: Phaser.Geom.Rectangle | null } | null =
-    null;
-
   constructor() {
     super("MainScene");
   }
@@ -95,30 +89,11 @@ export class MainScene extends Phaser.Scene {
       characterInstance.init();
       this.characters[character.name] = characterInstance;
     });
-
-    setTimeout(() => {
-      console.log(this.knightBounds, this.archerBounds);
-    }, 1000);
   }
 
   update() {
-    // Iterate over all character instances and call update
     Object.values(this.characters).forEach((character) => {
       character.update();
     });
-
-    // Collect bounds for knight and archer
-    const knight = this.characters["knight"] as Knight;
-    const archer = this.characters["archer"] as Archer;
-
-    // Get bounds for knight if knight exists
-    if (knight) {
-      this.knightBounds = knight.getAllBounds();
-    }
-
-    // Get bounds for archer if archer exists
-    if (archer) {
-      this.archerBounds = archer.getAllBounds();
-    }
   }
 }

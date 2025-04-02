@@ -1,5 +1,6 @@
 import Phaser from "phaser";
 import { archer_constants } from "../../constants";
+import { Knight } from "./knight.entity";
 
 const ARCHER = archer_constants;
 
@@ -204,10 +205,11 @@ export class Archer {
     this.range?.destroy();
   }
 
-  walk() {
+  walk(speed: number = 0) {
     if (!this.archer || this.isAttacking) return;
     this.canIdle = false;
     this.playAnimation("archer_walk", true);
+    this.archer.x += speed;
   }
 
   updateHitboxePositions() {
@@ -221,11 +223,76 @@ export class Archer {
     this.range?.setPosition(this.archer.x, this.archer.y);
   }
 
+  knightInteractions() {
+    // Check if Archer collides with Knight
+    const knight = (this.scene as any).characters["knight"] as Knight;
+
+    if (
+      knight &&
+      Phaser.Geom.Intersects.RectangleToRectangle(
+        this.range!.getBounds(),
+        knight.range!.getBounds()
+      )
+    ) {
+      const directionToMove = knight.knight!.x - this.archer!.x;
+      if (directionToMove < 0) {
+        this.archer!.setFlipX(true);
+      } else if (directionToMove > 0) {
+        this.archer!.setFlipX(false);
+      }
+      this.canIdle = true;
+      this.attack();
+    } else {
+      this.walk(this.archer!.flipX ? -3 : 3);
+    }
+
+    // Death condition: collision with knight's attack hitbox
+    if (
+      knight &&
+      knight.attackHitbox &&
+      Phaser.Geom.Intersects.RectangleToRectangle(
+        this.hitbox!.getBounds(),
+        knight.attackHitbox.getBounds()
+      )
+    ) {
+      this.death();
+    }
+
+    // Arrow colliding with shield (destroy the arrow, do NOT cause knight's death)
+    if (
+      knight &&
+      this.arrow &&
+      this.arrowHitbox &&
+      knight.shieldHitbox &&
+      Phaser.Geom.Intersects.RectangleToRectangle(
+        this.arrowHitbox.getBounds(),
+        knight.shieldHitbox.getBounds()
+      )
+    ) {
+      this.destroyArrow();
+    }
+
+    if (
+      knight &&
+      this.arrow &&
+      this.arrowHitbox &&
+      knight.hitbox &&
+      Phaser.Geom.Intersects.RectangleToRectangle(
+        this.arrowHitbox.getBounds(),
+        knight.hitbox.getBounds()
+      )
+    ) {
+      this.destroyArrow();
+      // knight.death();
+    }
+  }
+
   update() {
     if (!this.archer || this.dead) return;
 
     this.updateHitboxePositions();
     this.updateArrowPosition();
+    this.knightInteractions();
 
     if (this.canIdle) {
       this.idle();

@@ -24,7 +24,7 @@ const game = new Phaser.Game({
     mode: Phaser.Scale.FIT,
   },
   fps: {
-    target: 90,
+    target: 60,
     forceSetTimeOut: true,
   },
 });
