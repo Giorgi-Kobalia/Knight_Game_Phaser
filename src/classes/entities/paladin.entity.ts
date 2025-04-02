@@ -47,11 +47,6 @@ export class Paladin {
           this.isAttacking = false;
           this.attackReload = true;
 
-          if (this.attackHitbox) {
-            this.attackHitbox.destroy();
-            this.attackHitbox = undefined;
-          }
-
           setTimeout(() => {
             this.attackReload = false;
           }, 3000);
@@ -96,6 +91,17 @@ export class Paladin {
               0
             );
             this.scene.physics.add.existing(this.attackHitbox);
+          }
+        }
+
+        if (
+          this.paladin &&
+          anim.key === "paladin_attack" &&
+          frame.index === 26
+        ) {
+          if (this.attackHitbox) {
+            this.attackHitbox.destroy();
+            this.attackHitbox = undefined;
           }
         }
       }
