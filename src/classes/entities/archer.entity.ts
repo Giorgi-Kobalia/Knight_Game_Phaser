@@ -4,15 +4,15 @@ import { archer_constants } from "../../constants";
 const ARCHER = archer_constants;
 
 export class Archer {
-  private scene: Phaser.Scene;
-  private archer?: Phaser.GameObjects.Sprite;
-  private arrow?: Phaser.GameObjects.Sprite;
-  private canIdle: boolean = true;
-  private dead: boolean = false;
-  private spawnPoint: number = 0;
-  private arrowReload: boolean = false;
-  private isAttacking: boolean = false;
-  private spawnOrientation: "left" | "right" = "right";
+  public scene: Phaser.Scene;
+  public archer?: Phaser.GameObjects.Sprite;
+  public arrow?: Phaser.GameObjects.Sprite;
+  public canIdle: boolean = true;
+  public dead: boolean = false;
+  public spawnPoint: number = 0;
+  public arrowReload: boolean = false;
+  public isAttacking: boolean = false;
+  public spawnOrientation: "left" | "right" = "right";
 
   public hitbox?: Phaser.GameObjects.Rectangle;
   public range?: Phaser.GameObjects.Rectangle;
@@ -79,6 +79,22 @@ export class Archer {
         });
       }
     });
+  }
+
+  getAllBounds() {
+    const bounds: { [key: string]: Phaser.Geom.Rectangle | null } = {};
+
+    const hitboxes = [
+      { key: "hitbox", hitbox: this.hitbox },
+      { key: "arrowHitbox", hitbox: this.arrowHitbox },
+      { key: "range", hitbox: this.range },
+    ];
+
+    hitboxes.forEach(({ key, hitbox }) => {
+      bounds[key] = hitbox ? hitbox.getBounds() : null;
+    });
+
+    return bounds;
   }
 
   addHitboxes() {

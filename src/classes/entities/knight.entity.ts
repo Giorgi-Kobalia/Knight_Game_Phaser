@@ -4,18 +4,18 @@ import { knight_constants } from "../../constants";
 const KNIGHT = knight_constants;
 
 export class Knight {
-  private scene: Phaser.Scene;
+  public scene: Phaser.Scene;
   public knight?: Phaser.GameObjects.Sprite;
-  private canIdle: boolean = true;
-  private isShieldActevated: boolean = false;
-  private dead: boolean = false;
+  public canIdle: boolean = true;
+  public isShieldActevated: boolean = false;
+  public dead: boolean = false;
   public hitbox?: Phaser.GameObjects.Rectangle;
   public attackHitbox?: Phaser.GameObjects.Rectangle;
   public shieldHitbox?: Phaser.GameObjects.Rectangle;
   public isAttacking: boolean = false;
   public range?: Phaser.GameObjects.Rectangle;
 
-  private keys?: {
+  public keys?: {
     A: Phaser.Input.Keyboard.Key;
     D: Phaser.Input.Keyboard.Key;
     SHIFT: Phaser.Input.Keyboard.Key;
@@ -68,6 +68,23 @@ export class Knight {
         });
       }
     });
+  }
+
+  getAllBounds() {
+    const bounds: { [key: string]: Phaser.Geom.Rectangle | null } = {};
+
+    const hitboxes = [
+      { key: "hitbox", hitbox: this.hitbox },
+      { key: "attackHitbox", hitbox: this.attackHitbox },
+      { key: "shieldHitbox", hitbox: this.shieldHitbox },
+      { key: "range", hitbox: this.range },
+    ];
+
+    hitboxes.forEach(({ key, hitbox }) => {
+      bounds[key] = hitbox ? hitbox.getBounds() : null;
+    });
+
+    return bounds;
   }
 
   addHitboxes() {

@@ -28,9 +28,16 @@ interface CharacterConfig {
 
 export class MainScene extends Phaser.Scene {
   private background!: Background;
+
   private characters: {
     [key: string]: Knight | Archer | Necromancer | Paladin | Ronin;
   } = {};
+
+  private knightBounds: { [key: string]: Phaser.Geom.Rectangle | null } | null =
+    null;
+
+  private archerBounds: { [key: string]: Phaser.Geom.Rectangle | null } | null =
+    null;
 
   constructor() {
     super("MainScene");
@@ -74,10 +81,10 @@ export class MainScene extends Phaser.Scene {
     this.background = new Background(this);
 
     const characters: CharacterConfig[] = [
-      { name: "archer", classRef: Archer },
       // { name: "necromancer", classRef: Necromancer },
       // { name: "paladin", classRef: Paladin },
       // { name: "ronin", classRef: Ronin },
+      { name: "archer", classRef: Archer },
       { name: "knight", classRef: Knight },
     ];
 
@@ -88,6 +95,10 @@ export class MainScene extends Phaser.Scene {
       characterInstance.init();
       this.characters[character.name] = characterInstance;
     });
+
+    setTimeout(() => {
+      console.log(this.knightBounds, this.archerBounds);
+    }, 1000);
   }
 
   update() {
@@ -95,69 +106,19 @@ export class MainScene extends Phaser.Scene {
     Object.values(this.characters).forEach((character) => {
       character.update();
     });
+
+    // Collect bounds for knight and archer
+    const knight = this.characters["knight"] as Knight;
+    const archer = this.characters["archer"] as Archer;
+
+    // Get bounds for knight if knight exists
+    if (knight) {
+      this.knightBounds = knight.getAllBounds();
+    }
+
+    // Get bounds for archer if archer exists
+    if (archer) {
+      this.archerBounds = archer.getAllBounds();
+    }
   }
 }
-
-//  // Check if Archer collides with Knight
-//  const knight = (this.scene as any).characters["knight"] as Knight;
-
-//  if (
-//    knight &&
-//    Phaser.Geom.Intersects.RectangleToRectangle(
-//      this.range!.getBounds(),
-//      knight.range!.getBounds()
-//    )
-//  ) {
-//    const directionToMove = knight.knight!.x - this.archer.x;
-//    if (directionToMove < 0) {
-//      this.archer.setFlipX(true);
-//    } else if (directionToMove > 0) {
-//      this.archer.setFlipX(false);
-//    }
-//    this.velocityX = 0; // Stop moving
-//    this.canIdle = true; // Allow idle animation or other logic
-
-//    this.attack(); // Perform arrow attack
-//  } else {
-//    this.walk();
-//  }
-
-//  // Death condition: collision with knight's attack hitbox
-//  if (
-//    knight &&
-//    knight.attackHitbox &&
-//    Phaser.Geom.Intersects.RectangleToRectangle(
-//      this.hitbox!.getBounds(),
-//      knight.attackHitbox.getBounds()
-//    )
-//  ) {
-//    this.death();
-//  }
-
-//  // Arrow colliding with shield (destroy the arrow, do NOT cause knight's death)
-//  if (
-//    knight &&
-//    this.arrow &&
-//    this.arrowHitbox &&
-//    knight.shieldHitbox &&
-//    Phaser.Geom.Intersects.RectangleToRectangle(
-//      this.arrowHitbox.getBounds(),
-//      knight.shieldHitbox.getBounds()
-//    )
-//  ) {
-//    this.destroyArrow();
-//  }
-
-//  if (
-//    knight &&
-//    this.arrow &&
-//    this.arrowHitbox &&
-//    knight.hitbox &&
-//    Phaser.Geom.Intersects.RectangleToRectangle(
-//      this.arrowHitbox.getBounds(),
-//      knight.hitbox.getBounds()
-//    )
-//  ) {
-//    this.destroyArrow();
-//    // knight.death();
-//  }
