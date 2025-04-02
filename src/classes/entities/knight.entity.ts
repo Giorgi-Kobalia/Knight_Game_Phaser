@@ -45,7 +45,7 @@ export class Knight {
     this.animations();
 
     this.knight.on("animationcomplete", (anim: Phaser.Animations.Animation) => {
-      if (["knight_attack"].includes(anim.key)) {
+      if (anim.key === "knight_attack") {
         this.canIdle = true;
         this.isAttacking = false;
 

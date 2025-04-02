@@ -59,7 +59,7 @@ export class Necromancer {
     this.necromancer.on(
       "animationcomplete",
       (anim: Phaser.Animations.Animation) => {
-        if (["necromancer_attack"].includes(anim.key)) {
+        if (anim.key === "necromancer_attack") {
           this.canIdle = true;
           this.isAttacking = false;
           this.skullReload = true;
@@ -214,6 +214,8 @@ export class Necromancer {
 
   knightInteractions() {
     const knight = (this.scene as any).characters["knight"] as Knight;
+
+    if (!knight.knight) this.idle();
 
     if (!this.necromancer || !knight.knight) return;
 

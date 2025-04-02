@@ -38,7 +38,7 @@ export class MainScene extends Phaser.Scene {
     | typeof Necromancer
     | typeof Paladin
     | typeof Ronin
-  )[] = [Ronin];
+  )[] = [Paladin];
 
   private enemyCounter: number = 0;
 

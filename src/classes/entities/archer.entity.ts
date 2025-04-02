@@ -53,7 +53,7 @@ export class Archer {
     );
 
     this.archer.on("animationcomplete", (anim: Phaser.Animations.Animation) => {
-      if (["archer_attack"].includes(anim.key)) {
+      if (anim.key === "archer_attack") {
         this.canIdle = true;
         this.isAttacking = false;
         this.arrowReload = true;
@@ -204,6 +204,8 @@ export class Archer {
 
   knightInteractions() {
     const knight = (this.scene as any).characters["knight"] as Knight;
+
+    if (!knight.knight) this.idle();
 
     if (!this.archer || !knight.knight) return;
 

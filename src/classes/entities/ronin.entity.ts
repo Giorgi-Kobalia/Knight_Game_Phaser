@@ -40,7 +40,7 @@ export class Ronin {
     this.addHitboxes();
 
     this.ronin.on("animationcomplete", (anim: Phaser.Animations.Animation) => {
-      if (["ronin_attack"].includes(anim.key)) {
+      if (anim.key === "ronin_attack") {
         this.canIdle = true;
         this.isAttacking = false;
         this.attackReload = true;
@@ -175,6 +175,8 @@ export class Ronin {
 
   knightInteractions() {
     const knight = (this.scene as any).characters["knight"] as Knight;
+
+    if (!knight.knight) this.idle();
 
     if (!this.ronin || !knight.knight) return;
 
