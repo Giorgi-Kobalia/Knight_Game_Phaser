@@ -16,7 +16,6 @@ export class Knight {
   public range?: Phaser.GameObjects.Rectangle;
 
   private keys?: {
-    W: Phaser.Input.Keyboard.Key;
     A: Phaser.Input.Keyboard.Key;
     D: Phaser.Input.Keyboard.Key;
     SHIFT: Phaser.Input.Keyboard.Key;
@@ -32,7 +31,6 @@ export class Knight {
     this.knight.scale = 3;
 
     this.keys = {
-      W: this.scene.input.keyboard!.addKey(Phaser.Input.Keyboard.KeyCodes.W),
       A: this.scene.input.keyboard!.addKey(Phaser.Input.Keyboard.KeyCodes.A),
       D: this.scene.input.keyboard!.addKey(Phaser.Input.Keyboard.KeyCodes.D),
       SHIFT: this.scene.input.keyboard!.addKey(
@@ -123,7 +121,7 @@ export class Knight {
   update() {
     if (!this.knight || !this.keys || this.dead) return;
 
-    const { A, D, SHIFT, SPACE, W } = this.keys;
+    const { A, D, SHIFT, SPACE } = this.keys;
 
     if (!this.isShieldActevated && this.shieldHitbox) {
       if (!this.shieldHitbox) return;

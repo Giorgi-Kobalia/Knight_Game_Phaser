@@ -1,6 +1,5 @@
 import Phaser from "phaser";
 import { archer_constants } from "../../constants";
-import { Knight } from "./knight.entity";
 
 const ARCHER = archer_constants;
 
@@ -11,7 +10,6 @@ export class Archer {
   private canIdle: boolean = true;
   private dead: boolean = false;
   private spawnPoint: number = 0;
-  private velocityX: number = 3;
   private arrowReload: boolean = false;
   private isAttacking: boolean = false;
   private spawnOrientation: "left" | "right" = "right";
@@ -41,7 +39,6 @@ export class Archer {
     this.archer.setFlipX(this.spawnOrientation === "left");
 
     // Set velocity direction based on spawn orientation
-    this.velocityX = this.spawnOrientation === "left" ? -3 : 3;
 
     this.addHitboxes();
     this.animations();
@@ -193,29 +190,12 @@ export class Archer {
 
   walk() {
     if (!this.archer || this.isAttacking) return;
-
     this.canIdle = false;
-
-    const knight = (this.scene as any).characters["knight"] as Knight;
-
-    if (!knight || !knight.knight) return;
-
-    const directionToMove = knight.knight.x - this.archer.x;
-
-    if (directionToMove < 0) {
-      this.velocityX = -3;
-    } else if (directionToMove > 0) {
-      this.velocityX = 3;
-    }
-
     this.playAnimation("archer_walk", true);
-    this.archer.x += this.velocityX;
   }
 
-  update() {
-    this.updateArrowPosition();
-
-    if (!this.archer || this.dead) return;
+  updateHitboxePositions() {
+    if (!this.archer) return;
 
     this.hitbox?.setPosition(
       this.archer.flipX ? this.archer.x + 20 : this.archer.x - 20,
@@ -223,73 +203,16 @@ export class Archer {
     );
 
     this.range?.setPosition(this.archer.x, this.archer.y);
+  }
+
+  update() {
+    if (!this.archer || this.dead) return;
+
+    this.updateHitboxePositions();
+    this.updateArrowPosition();
 
     if (this.canIdle) {
       this.idle();
-    }
-
-    // Check if Archer collides with Knight
-    const knight = (this.scene as any).characters["knight"] as Knight;
-
-    if (
-      knight &&
-      Phaser.Geom.Intersects.RectangleToRectangle(
-        this.range!.getBounds(),
-        knight.range!.getBounds()
-      )
-    ) {
-      const directionToMove = knight.knight!.x - this.archer.x;
-      if (directionToMove < 0) {
-        this.archer.setFlipX(true);
-      } else if (directionToMove > 0) {
-        this.archer.setFlipX(false);
-      }
-      this.velocityX = 0; // Stop moving
-      this.canIdle = true; // Allow idle animation or other logic
-
-      this.attack(); // Perform arrow attack
-    } else {
-      this.walk();
-    }
-
-    // Death condition: collision with knight's attack hitbox
-    if (
-      knight &&
-      knight.attackHitbox &&
-      Phaser.Geom.Intersects.RectangleToRectangle(
-        this.hitbox!.getBounds(),
-        knight.attackHitbox.getBounds()
-      )
-    ) {
-      this.death();
-    }
-
-    // Arrow colliding with shield (destroy the arrow, do NOT cause knight's death)
-    if (
-      knight &&
-      this.arrow &&
-      this.arrowHitbox &&
-      knight.shieldHitbox &&
-      Phaser.Geom.Intersects.RectangleToRectangle(
-        this.arrowHitbox.getBounds(),
-        knight.shieldHitbox.getBounds()
-      )
-    ) {
-      this.destroyArrow();
-    }
-
-    if (
-      knight &&
-      this.arrow &&
-      this.arrowHitbox &&
-      knight.hitbox &&
-      Phaser.Geom.Intersects.RectangleToRectangle(
-        this.arrowHitbox.getBounds(),
-        knight.hitbox.getBounds()
-      )
-    ) {
-      this.destroyArrow();
-      knight.death();
     }
   }
 }

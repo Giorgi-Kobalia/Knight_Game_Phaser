@@ -42,7 +42,7 @@ export class MainScene extends Phaser.Scene {
         spriteKey: string;
         spritePath: string;
         spriteConfiguration: Phaser.Types.Textures.SpriteSheetConfig;
-      }[] 
+      }[]
     ) => {
       constants.forEach((element) => {
         this.load.spritesheet(
@@ -98,3 +98,66 @@ export class MainScene extends Phaser.Scene {
   }
 }
 
+//  // Check if Archer collides with Knight
+//  const knight = (this.scene as any).characters["knight"] as Knight;
+
+//  if (
+//    knight &&
+//    Phaser.Geom.Intersects.RectangleToRectangle(
+//      this.range!.getBounds(),
+//      knight.range!.getBounds()
+//    )
+//  ) {
+//    const directionToMove = knight.knight!.x - this.archer.x;
+//    if (directionToMove < 0) {
+//      this.archer.setFlipX(true);
+//    } else if (directionToMove > 0) {
+//      this.archer.setFlipX(false);
+//    }
+//    this.velocityX = 0; // Stop moving
+//    this.canIdle = true; // Allow idle animation or other logic
+
+//    this.attack(); // Perform arrow attack
+//  } else {
+//    this.walk();
+//  }
+
+//  // Death condition: collision with knight's attack hitbox
+//  if (
+//    knight &&
+//    knight.attackHitbox &&
+//    Phaser.Geom.Intersects.RectangleToRectangle(
+//      this.hitbox!.getBounds(),
+//      knight.attackHitbox.getBounds()
+//    )
+//  ) {
+//    this.death();
+//  }
+
+//  // Arrow colliding with shield (destroy the arrow, do NOT cause knight's death)
+//  if (
+//    knight &&
+//    this.arrow &&
+//    this.arrowHitbox &&
+//    knight.shieldHitbox &&
+//    Phaser.Geom.Intersects.RectangleToRectangle(
+//      this.arrowHitbox.getBounds(),
+//      knight.shieldHitbox.getBounds()
+//    )
+//  ) {
+//    this.destroyArrow();
+//  }
+
+//  if (
+//    knight &&
+//    this.arrow &&
+//    this.arrowHitbox &&
+//    knight.hitbox &&
+//    Phaser.Geom.Intersects.RectangleToRectangle(
+//      this.arrowHitbox.getBounds(),
+//      knight.hitbox.getBounds()
+//    )
+//  ) {
+//    this.destroyArrow();
+//    // knight.death();
+//  }
