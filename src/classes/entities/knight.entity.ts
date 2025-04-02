@@ -5,7 +5,7 @@ const KNIGHT = knight_constants;
 
 export class Knight {
   private scene: Phaser.Scene;
-  public knight?: Phaser.GameObjects.Sprite; // Make this public so it's accessible
+  public knight?: Phaser.GameObjects.Sprite;
   private canIdle: boolean = true;
   private isShieldActevated: boolean = false;
   private dead: boolean = false;
@@ -42,23 +42,20 @@ export class Knight {
     };
 
     this.addHitboxes();
-
     this.animations();
 
     this.knight.on("animationcomplete", (anim: Phaser.Animations.Animation) => {
-      // Go to idle after playing this animation
       if (["knight_attack"].includes(anim.key)) {
         this.canIdle = true;
         this.isAttacking = false;
 
-        // Remove the attack hitbox immediately after the attack animation completes
+        // Remove the attack hitbox after the attack animation completes
         if (this.attackHitbox) {
           this.attackHitbox.destroy();
           this.attackHitbox = undefined;
         }
       }
 
-      // Handle death fade-out and destroy
       if (anim.key === "knight_death") {
         this.scene.tweens.add({
           targets: this.knight,
@@ -111,25 +108,26 @@ export class Knight {
     });
   }
 
-  death() {
+  idle() {
     if (!this.knight) return;
-    this.canIdle = false;
-    this.dead = true;
-    this.knight.play("knight_death", true);
+    this.knight.play("knight_idle", true);
   }
 
-  update() {
-    if (!this.knight || !this.keys || this.dead) return;
+  walk() {
+    if (!this.knight || this.isAttacking) return;
 
-    const { A, D, SHIFT, SPACE } = this.keys;
+    this.canIdle = true; // Allow idle after walking
+    this.isShieldActevated = false; // Disable shield while walking
+    this.knight.play("knight_walk", true);
+  }
 
-    if (!this.isShieldActevated && this.shieldHitbox) {
-      if (!this.shieldHitbox) return;
-      this.shieldHitbox.destroy();
-      this.shieldHitbox = undefined;
-    }
+  shield() {
+    if (!this.knight || this.isShieldActevated || this.isAttacking) return;
+    this.canIdle = false;
+    this.knight.play("knight_shield", true);
+    this.isShieldActevated = true;
 
-    if (this.isShieldActevated && !this.shieldHitbox) {
+    if (!this.shieldHitbox) {
       this.shieldHitbox = this.scene.add.rectangle(
         this.knight.flipX ? this.knight.x - 20 : this.knight.x + 20,
         this.knight.y,
@@ -140,67 +138,89 @@ export class Knight {
       );
       this.scene.physics.add.existing(this.shieldHitbox);
     }
+  }
 
-    // Regular hitbox and range position updates
+  destroyShieldIfDontUse() {
+    if (!this.isShieldActevated && this.shieldHitbox) {
+      this.shieldHitbox.destroy();
+      this.shieldHitbox = undefined;
+    }
+  }
+
+  attack() {
+    if (!this.knight) return;
+
+    this.isAttacking = true;
+    this.canIdle = false;
+    this.isShieldActevated = false;
+    this.knight.play("knight_attack", true);
+
+    if (!this.attackHitbox) {
+      this.attackHitbox = this.scene.add.rectangle(
+        this.knight.x,
+        this.knight.y,
+        60,
+        100,
+        0xffff00,
+        0
+      );
+      this.scene.physics.add.existing(this.attackHitbox);
+    }
+  }
+
+  death() {
+    if (!this.knight) return;
+    this.canIdle = false;
+    this.dead = true;
+    this.knight.play("knight_death", true);
+  }
+
+  changeHitboxPosition() {
+    if (!this.knight) return;
+
     this.hitbox?.setPosition(this.knight.x, this.knight.y);
     this.range?.setPosition(this.knight.x, this.knight.y);
 
-    // Attack hitbox appears only during the attack animation
     if (this.attackHitbox) {
       this.attackHitbox.setPosition(
         this.knight.flipX ? this.knight.x - 60 : this.knight.x + 60,
         this.knight.y
       );
     }
+  }
 
-    // Handle movement
-    if (A.isDown && !this.isAttacking) {
-      this.knight.setFlipX(true);
-      this.canIdle = true; // Allow idle after walking
-      this.isShieldActevated = false; // Disable shield while walking
+  update() {
+    if (!this.knight || !this.keys || this.dead) return;
 
-      this.knight.play("knight_walk", true);
-      this.knight.x -= 5;
-    } else if (D.isDown && !this.isAttacking) {
-      this.knight.setFlipX(false);
-      this.canIdle = true; // Allow idle after walking
-      this.isShieldActevated = false; // Disable shield while walking
+    const { A, D, SHIFT, SPACE } = this.keys;
 
-      this.knight.play("knight_walk", true);
-      this.knight.x += 5;
-    }
+    this.changeHitboxPosition();
+    this.destroyShieldIfDontUse();
 
-    // Handle shield
-    else if (SHIFT.isDown && !this.isShieldActevated && !this.isAttacking) {
-      this.canIdle = false;
-      this.knight.play("knight_shield", true);
-      this.isShieldActevated = true;
-    }
+    switch (true) {
+      case A.isDown:
+        this.knight.setFlipX(true);
+        this.walk();
+        this.knight.x -= 5;
+        break;
 
-    // Handle attack
-    else if (SPACE.isDown) {
-      this.isAttacking = true;
-      this.canIdle = false;
-      this.isShieldActevated = false;
-      this.knight.play("knight_attack", true);
+      case D.isDown:
+        this.knight.setFlipX(false);
+        this.walk();
+        this.knight.x += 5;
+        break;
 
-      // Create and show the attack hitbox when the attack starts
-      if (!this.attackHitbox) {
-        this.attackHitbox = this.scene.add.rectangle(
-          this.knight.x,
-          this.knight.y,
-          60,
-          100,
-          0xffff00,
-          0
-        );
-        this.scene.physics.add.existing(this.attackHitbox);
-      }
-    }
+      case SHIFT.isDown:
+        this.shield();
+        break;
 
-    // Handle idle state
-    else if (this.canIdle && !this.isAttacking) {
-      this.knight.play("knight_idle", true);
+      case SPACE.isDown:
+        this.attack();
+        break;
+
+      case this.canIdle && !this.isAttacking:
+        this.idle();
+        break;
     }
   }
 }
