@@ -67,6 +67,35 @@ export class Ronin {
         });
       }
     });
+
+    this.ronin.on(
+      "animationupdate",
+      (
+        anim: Phaser.Animations.Animation,
+        frame: Phaser.Animations.AnimationFrame
+      ) => {
+        if (this.ronin && anim.key === "ronin_attack" && frame.index === 3) {
+          if (!this.attackHitbox) {
+            this.attackHitbox = this.scene.add.rectangle(
+              this.ronin.x,
+              this.ronin.y,
+              60,
+              100,
+              0xffff00,
+              0
+            );
+            this.scene.physics.add.existing(this.attackHitbox);
+          }
+        }
+
+        if (this.ronin && anim.key === "ronin_attack" && frame.index === 18) {
+          if (this.attackHitbox) {
+            this.attackHitbox.destroy();
+            this.attackHitbox = undefined;
+          }
+        }
+      }
+    );
   }
 
   addHitboxes() {
@@ -124,18 +153,6 @@ export class Ronin {
     this.isAttacking = true;
     this.canIdle = false;
     this.ronin.play("ronin_attack", true);
-
-    if (!this.attackHitbox) {
-      this.attackHitbox = this.scene.add.rectangle(
-        this.ronin.x,
-        this.ronin.y,
-        60,
-        100,
-        0xffff00,
-        0
-      );
-      this.scene.physics.add.existing(this.attackHitbox);
-    }
   }
 
   death() {
@@ -231,7 +248,7 @@ export class Ronin {
 
         if (hitKnight) {
           // Рыцарь получает урон
-          knight.death();
+          // knight.death();
         }
       }
     }
