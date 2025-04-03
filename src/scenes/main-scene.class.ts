@@ -179,7 +179,6 @@ export class MainScene extends Phaser.Scene {
       this.restart.alpha = 1;
     }
 
-    // Update enemies with worldSpeed
     Object.values(this.characters).forEach((character) => {
       if (
         character instanceof Ronin ||
@@ -189,11 +188,10 @@ export class MainScene extends Phaser.Scene {
       ) {
         character.update(worldSpeed);
       } else {
-        character.update(); // Default update for non-enemies
+        character.update();
       }
     });
 
-    // Move background
     this.background.update(worldSpeed * -0.085);
   }
 }

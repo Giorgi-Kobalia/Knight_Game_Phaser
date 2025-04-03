@@ -49,7 +49,6 @@ export class Knight {
         this.canIdle = true;
         this.isAttacking = false;
 
-        // Remove the attack hitbox after the attack animation completes
         if (this.attackHitbox) {
           this.attackHitbox.destroy();
           this.attackHitbox = undefined;
@@ -88,7 +87,6 @@ export class Knight {
   }
 
   addHitboxes() {
-    // Create the regular hitbox for the knight.
     this.hitbox = this.scene.add.rectangle(
       this.knight?.x,
       this.knight?.y,
@@ -99,7 +97,6 @@ export class Knight {
     );
     this.scene.physics.add.existing(this.hitbox);
 
-    // Create a range hitbox for attacks.
     this.range = this.scene.add.rectangle(
       this.knight?.x,
       this.knight?.y,
@@ -135,8 +132,8 @@ export class Knight {
   walk() {
     if (!this.knight || this.isAttacking) return;
 
-    this.canIdle = true; // Allow idle after walking
-    this.isShieldActevated = false; // Disable shield while walking
+    this.canIdle = true;
+    this.isShieldActevated = false;
     this.knight.play("knight_walk", true);
   }
 

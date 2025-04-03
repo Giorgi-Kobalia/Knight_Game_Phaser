@@ -254,7 +254,6 @@ export class Paladin {
     if (knight && this.attackHitbox) {
       const attackBounds = this.attackHitbox.getBounds();
 
-      // Проверяем, попал ли удар в щит
       const hitShield =
         knight.shieldHitbox &&
         Phaser.Geom.Intersects.RectangleToRectangle(
@@ -262,7 +261,6 @@ export class Paladin {
           knight.shieldHitbox.getBounds()
         );
 
-      // Если удар НЕ попал в щит, проверяем урон по телу рыцаря
       if (!hitShield && knight.hitbox) {
         const hitKnight = Phaser.Geom.Intersects.RectangleToRectangle(
           attackBounds,
