@@ -141,9 +141,10 @@ export class Archer {
     this.scene.physics.add.existing(this.arrowHitbox);
   }
 
-  updateArrowPosition() {
+  updateArrowPosition(worldSpeed: number = 0) {
     if (!this.arrow) return;
     this.arrow.x += this.arrow.getData("velocity");
+    this.arrow.x += worldSpeed;
     this.arrowHitbox?.setPosition(this.arrow.x, this.arrow.y);
   }
 
@@ -270,11 +271,13 @@ export class Archer {
     }
   }
 
-  update() {
-    if (!this.archer || this.dead) return;
-
+  update(worldSpeed: number = 0) {
+    if (!this.archer) return;
+    this.archer.x += worldSpeed;
     this.updateHitboxePositions();
-    this.updateArrowPosition();
+    this.updateArrowPosition(worldSpeed);
+
+    if (this.dead) return;
     this.knightInteractions();
 
     if (this.canIdle) {

@@ -223,13 +223,13 @@ export class Knight {
       case A.isDown:
         this.knight.setFlipX(true);
         this.walk();
-        this.knight.x -= 5;
+        // this.knight.x -= 5;
         break;
 
       case D.isDown:
         this.knight.setFlipX(false);
         this.walk();
-        this.knight.x += 5;
+        // this.knight.x += 5;
         break;
 
       case SHIFT.isDown:

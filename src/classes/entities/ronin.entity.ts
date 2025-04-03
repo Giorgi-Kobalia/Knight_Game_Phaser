@@ -248,16 +248,18 @@ export class Ronin {
 
         if (hitKnight) {
           // Рыцарь получает урон
-          // knight.death();
+          knight.death();
         }
       }
     }
   }
 
-  update() {
-    if (!this.ronin || this.dead) return;
-
+  update(worldSpeed: number = 0) {
+    if (!this.ronin) return;
+    this.ronin.x += worldSpeed;
     this.updateHitboxePositions();
+
+    if (this.dead) return;
     this.knightInteractions();
 
     if (this.canIdle) {

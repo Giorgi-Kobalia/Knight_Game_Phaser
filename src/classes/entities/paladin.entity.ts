@@ -269,10 +269,12 @@ export class Paladin {
     }
   }
 
-  update() {
-    if (!this.paladin || this.dead) return;
-
+  update(worldSpeed: number = 0) {
+    if (!this.paladin) return;
+    this.paladin.x += worldSpeed;
     this.updateHitboxePositions();
+
+    if (this.dead) return;
     this.knightInteractions();
 
     if (this.canIdle) {

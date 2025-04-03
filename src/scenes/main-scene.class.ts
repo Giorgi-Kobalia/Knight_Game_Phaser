@@ -116,8 +116,33 @@ export class MainScene extends Phaser.Scene {
   }
 
   update() {
+    let worldSpeed = 0;
+
+    // Determine world speed based on knight's movement
+    const knight = this.characters["knight"] as Knight;
+    if (knight.knight) {
+      if (this.input.keyboard?.addKey("A").isDown) {
+        worldSpeed = 6;
+      } else if (this.input.keyboard?.addKey("D").isDown) {
+        worldSpeed = -6;
+      }
+    }
+
+    // Update enemies with worldSpeed
     Object.values(this.characters).forEach((character) => {
-      character.update();
+      if (
+        character instanceof Ronin ||
+        character instanceof Archer ||
+        character instanceof Necromancer ||
+        character instanceof Paladin
+      ) {
+        character.update(worldSpeed);
+      } else {
+        character.update(); // Default update for non-enemies
+      }
     });
+
+    // Move background
+    this.background.update(worldSpeed * -0.085);
   }
 }

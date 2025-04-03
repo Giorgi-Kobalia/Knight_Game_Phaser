@@ -149,9 +149,10 @@ export class Necromancer {
     this.scene.physics.add.existing(this.skullHitbox);
   }
 
-  updateSkullPosition() {
+  updateSkullPosition(worldSpeed: number = 0) {
     if (!this.skull) return;
     this.skull.x += this.skull.getData("velocity");
+    this.skull.x += worldSpeed;
     this.skullHitbox?.setPosition(this.skull.x, this.skull.y);
   }
 
@@ -280,11 +281,13 @@ export class Necromancer {
     }
   }
 
-  update() {
-    if (!this.necromancer || this.dead) return;
-
+  update(worldSpeed: number = 0) {
+    if (!this.necromancer) return;
+    this.necromancer.x += worldSpeed;
     this.updateHitboxePositions();
-    this.updateSkullPosition();
+    this.updateSkullPosition(worldSpeed);
+
+    if (this.dead) return;
     this.knightInteractions();
 
     if (this.canIdle) {
