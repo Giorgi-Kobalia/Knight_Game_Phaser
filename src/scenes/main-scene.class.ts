@@ -80,6 +80,8 @@ export class MainScene extends Phaser.Scene {
     loadSpritesheets(paladin_constants);
     loadSpritesheets(ronin_constants);
     loadSpritesheets(knight_constants);
+
+    this.load.font("custom", "./fonts/font.ttf");
   }
 
   create() {
@@ -97,10 +99,9 @@ export class MainScene extends Phaser.Scene {
       this.characters[character.name] = characterInstance;
     });
 
-    this.scoreText = this.add.text(850, 50, `Score: 0`, {
-      fontSize: "32px",
+    this.scoreText = this.add.text(850, 20, `SCORE : 0`, {
+      font: "normal 40px custom",
       color: "#fff",
-      fontFamily: "Arial",
       resolution: 2,
     });
 
@@ -117,10 +118,9 @@ export class MainScene extends Phaser.Scene {
   }
 
   creatreRestartBtn() {
-    this.restart = this.add.text(850, 350, `RESTART`, {
-      fontSize: "50px",
+    this.restart = this.add.text(850, 320, `RESTART`, {
+      font: "normal 100px custom",
       color: "#fff",
-      fontFamily: "Arial",
       resolution: 2,
     });
 
@@ -156,12 +156,11 @@ export class MainScene extends Phaser.Scene {
 
   increaseScore(amount: number) {
     this.score += amount;
-    console.log("Current Score:", this.score);
   }
 
   update() {
     if (this.scoreText) {
-      this.scoreText.setText(`Score: ${this.score}`);
+      this.scoreText.setText(`SCORE : ${this.score}`);
     }
 
     let worldSpeed = 0;
