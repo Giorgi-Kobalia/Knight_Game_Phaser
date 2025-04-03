@@ -1,53 +1,62 @@
 import Phaser from "phaser";
 import { paladin_constants } from "../../constants";
+import { Knight } from "./knight.entity";
+import { MainScene } from "../../scenes/main-scene.class";
 
 const PALADIN = paladin_constants;
 
 export class Paladin {
-  private scene: Phaser.Scene;
-  private paladin?: Phaser.GameObjects.Sprite;
-  private canIdle: boolean = true;
-  private dead: boolean = false;
+  public scene: Phaser.Scene;
+  public paladin?: Phaser.GameObjects.Sprite;
+  public canIdle: boolean = true;
+  public dead: boolean = false;
+  public spawnPoint: number = 0;
+  public attackReload: boolean = false;
+  public isAttacking: boolean = false;
+  public spawnOrientation: "left" | "right" = "right";
 
-  private keys?: {
-    W: Phaser.Input.Keyboard.Key;
-    A: Phaser.Input.Keyboard.Key;
-    D: Phaser.Input.Keyboard.Key;
-    SHIFT: Phaser.Input.Keyboard.Key;
-    SPACE: Phaser.Input.Keyboard.Key;
-  };
+  public hitbox?: Phaser.GameObjects.Rectangle;
+  public range?: Phaser.GameObjects.Rectangle;
+  public attackHitbox?: Phaser.GameObjects.Rectangle;
 
   constructor(scene: Phaser.Scene) {
     this.scene = scene;
   }
 
   init() {
-    this.paladin = this.scene.add.sprite(1090, 514, PALADIN[0].spriteKey);
+    this.spawnPoint = Math.random() < 0.5 ? 0 : this.scene.cameras.main.width;
+    this.spawnOrientation = this.spawnPoint === 0 ? "right" : "left";
+
+    this.paladin = this.scene.add.sprite(
+      this.spawnPoint,
+      514,
+      PALADIN[0].spriteKey
+    );
+
     this.paladin.scale = 3;
 
-    this.keys = {
-      W: this.scene.input.keyboard!.addKey(Phaser.Input.Keyboard.KeyCodes.W),
-      A: this.scene.input.keyboard!.addKey(Phaser.Input.Keyboard.KeyCodes.A),
-      D: this.scene.input.keyboard!.addKey(Phaser.Input.Keyboard.KeyCodes.D),
-      SHIFT: this.scene.input.keyboard!.addKey(
-        Phaser.Input.Keyboard.KeyCodes.SHIFT
-      ),
-      SPACE: this.scene.input.keyboard!.addKey(
-        Phaser.Input.Keyboard.KeyCodes.SPACE
-      ),
-    };
+    this.paladin.setFlipX(this.spawnOrientation === "left");
 
     this.animations();
+    this.addHitboxes();
 
     this.paladin.on(
       "animationcomplete",
       (anim: Phaser.Animations.Animation) => {
-        // Go to iddle after playing athis animations
-        if (["paladin_attack", "paladin_hit"].includes(anim.key)) {
+        if (anim.key === "paladin_attack") {
+          this.canIdle = true;
+          this.isAttacking = false;
+          this.attackReload = true;
+
+          setTimeout(() => {
+            this.attackReload = false;
+          }, 3000);
+        }
+
+        if (anim.key === "paladin_hit") {
           this.canIdle = true;
         }
 
-        // Handle death fade-out and destroy
         if (anim.key === "paladin_death") {
           this.scene.tweens.add({
             targets: this.paladin,
@@ -61,57 +70,220 @@ export class Paladin {
         }
       }
     );
+
+    this.paladin.on(
+      "animationupdate",
+      (
+        anim: Phaser.Animations.Animation,
+        frame: Phaser.Animations.AnimationFrame
+      ) => {
+        if (
+          this.paladin &&
+          anim.key === "paladin_attack" &&
+          frame.index === 24
+        ) {
+          if (!this.attackHitbox) {
+            this.attackHitbox = this.scene.add.rectangle(
+              this.paladin.x,
+              this.paladin.y,
+              60,
+              100,
+              0xffff00,
+              0
+            );
+            this.scene.physics.add.existing(this.attackHitbox);
+          }
+        }
+
+        if (
+          this.paladin &&
+          anim.key === "paladin_attack" &&
+          frame.index === 26
+        ) {
+          if (this.attackHitbox) {
+            this.attackHitbox.destroy();
+            this.attackHitbox = undefined;
+          }
+        }
+      }
+    );
+  }
+
+  addHitboxes() {
+    if (!this.paladin) return;
+
+    this.hitbox = this.scene.add.rectangle(
+      this.paladin.x,
+      this.paladin.y,
+      40,
+      120,
+      0xff0000,
+      0
+    );
+
+    this.scene.physics.add.existing(this.hitbox);
+
+    this.range = this.scene.add.rectangle(
+      this.paladin.x,
+      this.paladin.y,
+      95,
+      10,
+      0x00ff00,
+      0
+    );
+
+    this.scene.physics.add.existing(this.range);
   }
 
   animations() {
     PALADIN.forEach((element) => {
-      this.scene.anims.create({
-        key: element.animationKey,
-        frames: this.scene.anims.generateFrameNumbers(
-          element.spriteKey,
-          element.animConfiguration
-        ),
-        frameRate: element.frameRate,
-        repeat: element.repeat,
-      });
+      if (!this.scene.anims.exists(element.animationKey)) {
+        this.scene.anims.create({
+          key: element.animationKey,
+          frames: this.scene.anims.generateFrameNumbers(
+            element.spriteKey,
+            element.animConfiguration
+          ),
+          frameRate: element.frameRate,
+          repeat: element.repeat,
+        });
+      }
     });
   }
 
-  update() {
-    if (!this.paladin || !this.keys || this.dead) return;
+  playAnimation(key: string, loop: boolean = true) {
+    if (!this.paladin) return;
+    this.paladin.play(key, loop);
+  }
 
-    if (this.keys.A.isDown) {
-      this.paladin.setFlipX(true);
+  idle() {
+    this.playAnimation("paladin_idle", true);
+  }
+
+  attack() {
+    if (!this.paladin || this.attackReload) return;
+
+    this.isAttacking = true;
+    this.canIdle = false;
+    this.paladin.play("paladin_attack", true);
+  }
+
+  death() {
+    if (!this.paladin || this.dead) return;
+    this.canIdle = false;
+    this.dead = true;
+    this.playAnimation("paladin_death", true);
+    this.hitbox?.destroy();
+    this.range?.destroy();
+
+    if (this.attackHitbox) {
+      this.attackHitbox.destroy();
+      this.attackHitbox = undefined;
+    }
+
+    if (this.scene instanceof MainScene) {
+      this.scene.increaseScore(1);
+    }
+  }
+
+  walk(speed: number = 0) {
+    if (!this.paladin || this.isAttacking) return;
+    this.canIdle = false;
+    this.playAnimation("paladin_walk", true);
+    this.paladin.x += speed;
+  }
+
+  hit() {
+    if (!this.paladin) return;
+    this.canIdle = false;
+    this.paladin.play("paladin_hit", true);
+  }
+
+  updateHitboxePositions() {
+    if (!this.paladin) return;
+
+    this.hitbox?.setPosition(this.paladin.x, 480);
+    this.range?.setPosition(this.paladin.x, 480);
+
+    if (this.attackHitbox) {
+      this.attackHitbox.setPosition(
+        this.paladin.flipX ? this.paladin.x - 80 : this.paladin.x + 80,
+        480
+      );
+    }
+  }
+
+  knightInteractions() {
+    const knight = (this.scene as any).characters["knight"] as Knight;
+
+    if (!knight.knight) this.idle();
+
+    if (!this.paladin || !knight.knight) return;
+
+    if (
+      knight &&
+      Phaser.Geom.Intersects.RectangleToRectangle(
+        this.range!.getBounds(),
+        knight.range!.getBounds()
+      )
+    ) {
+      const directionToMove = knight.knight.x - this.paladin.x;
+      if (directionToMove < 0) {
+        this.paladin.setFlipX(true);
+      } else if (directionToMove > 0) {
+        this.paladin.setFlipX(false);
+      }
       this.canIdle = true;
-      this.paladin.play("paladin_walk", true);
-    } else if (this.keys.D.isDown) {
-      this.paladin.setFlipX(false);
-      this.canIdle = true;
-      this.paladin.play("paladin_walk", true);
+      this.attack();
+    } else {
+      this.walk(this.paladin.flipX ? -3 : 3);
     }
 
-    // Handle Hit
-    else if (this.keys.SHIFT.isDown) {
-      this.canIdle = false;
-      this.paladin.play("paladin_hit", true);
+    if (
+      knight &&
+      this.hitbox &&
+      knight.attackHitbox &&
+      Phaser.Geom.Intersects.RectangleToRectangle(
+        this.hitbox.getBounds(),
+        knight.attackHitbox.getBounds()
+      )
+    ) {
+      this.death();
     }
 
-    // Handle attack
-    else if (this.keys.SPACE.isDown) {
-      this.canIdle = false;
-      this.paladin.play("paladin_attack", true);
-    }
+    if (knight && this.attackHitbox) {
+      const attackBounds = this.attackHitbox.getBounds();
 
-    // Handle death
-    else if (this.keys.W.isDown) {
-      this.canIdle = false;
-      this.dead = true;
-      this.paladin.play("paladin_death", true);
-    }
+      const hitShield =
+        knight.shieldHitbox &&
+        Phaser.Geom.Intersects.RectangleToRectangle(
+          attackBounds,
+          knight.shieldHitbox.getBounds()
+        );
 
-    // Handle idle state
-    else if (this.canIdle) {
-      this.paladin.play("paladin_idle", true);
+      if (!hitShield && knight.hitbox) {
+        const hitKnight = Phaser.Geom.Intersects.RectangleToRectangle(
+          attackBounds,
+          knight.hitbox.getBounds()
+        );
+
+        if (hitKnight) {
+          knight.death();
+        }
+      }
+    }
+  }
+
+  update(worldSpeed: number = 0) {
+    if (!this.paladin) return;
+    this.paladin.x += worldSpeed;
+    this.updateHitboxePositions();
+
+    if (this.dead) return;
+    this.knightInteractions();
+
+    if (this.canIdle) {
+      this.idle();
     }
   }
 }

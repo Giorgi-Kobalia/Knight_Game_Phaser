@@ -1,65 +1,69 @@
 import Phaser from "phaser";
 import { archer_constants } from "../../constants";
+import { Knight } from "./knight.entity";
+import { MainScene } from "../../scenes/main-scene.class";
 
 const ARCHER = archer_constants;
 
 export class Archer {
-  private scene: Phaser.Scene;
-  private archer?: Phaser.GameObjects.Sprite;
-  private arrows: Phaser.GameObjects.Sprite[] = [];
-  private canIdle: boolean = true;
-  private dead: boolean = false;
+  public scene: Phaser.Scene;
+  public archer?: Phaser.GameObjects.Sprite;
+  public arrow?: Phaser.GameObjects.Sprite;
+  public canIdle: boolean = true;
+  public dead: boolean = false;
+  public spawnPoint: number = 0;
+  public arrowReload: boolean = false;
+  public isAttacking: boolean = false;
+  public spawnOrientation: "left" | "right" = "right";
 
-  private keys?: {
-    W: Phaser.Input.Keyboard.Key;
-    A: Phaser.Input.Keyboard.Key;
-    D: Phaser.Input.Keyboard.Key;
-    SHIFT: Phaser.Input.Keyboard.Key;
-    SPACE: Phaser.Input.Keyboard.Key;
-  };
+  public hitbox?: Phaser.GameObjects.Rectangle;
+  public range?: Phaser.GameObjects.Rectangle;
+  public arrowHitbox?: Phaser.GameObjects.Rectangle;
 
   constructor(scene: Phaser.Scene) {
     this.scene = scene;
   }
 
   init() {
-    this.archer = this.scene.add.sprite(640, 480, ARCHER[0].spriteKey);
+    this.spawnPoint = Math.random() < 0.5 ? 0 : this.scene.cameras.main.width;
+    this.spawnOrientation = this.spawnPoint === 0 ? "right" : "left";
+
+    this.archer = this.scene.add.sprite(
+      this.spawnPoint,
+      480,
+      ARCHER[0].spriteKey
+    );
+
     this.archer.scale = 3;
 
-    this.keys = {
-      W: this.scene.input.keyboard!.addKey(Phaser.Input.Keyboard.KeyCodes.W),
-      A: this.scene.input.keyboard!.addKey(Phaser.Input.Keyboard.KeyCodes.A),
-      D: this.scene.input.keyboard!.addKey(Phaser.Input.Keyboard.KeyCodes.D),
-      SHIFT: this.scene.input.keyboard!.addKey(
-        Phaser.Input.Keyboard.KeyCodes.SHIFT
-      ),
-      SPACE: this.scene.input.keyboard!.addKey(
-        Phaser.Input.Keyboard.KeyCodes.SPACE
-      ),
-    };
+    this.archer.setFlipX(this.spawnOrientation === "left");
 
+    this.addHitboxes();
     this.animations();
 
-    // Fire arrow when custom frame of the attack animation plays
     this.archer.on(
       "animationupdate",
       (
         anim: Phaser.Animations.Animation,
         frame: Phaser.Animations.AnimationFrame
       ) => {
-        if (anim.key === "archer_attack" && frame.index === 9) {
-          this.spawnArrow(this.archer!.flipX);
+        if (this.archer && anim.key === "archer_attack" && frame.index === 9) {
+          this.spawnArrow(this.archer.flipX);
         }
       }
     );
 
     this.archer.on("animationcomplete", (anim: Phaser.Animations.Animation) => {
-      // Go to iddle after playing athis animations
-      if (["archer_attack", "archer_special"].includes(anim.key)) {
+      if (anim.key === "archer_attack") {
         this.canIdle = true;
+        this.isAttacking = false;
+        this.arrowReload = true;
+
+        setTimeout(() => {
+          this.arrowReload = false;
+        }, 4000);
       }
 
-      // Handle death fade-out and destroy
       if (anim.key === "archer_death") {
         this.scene.tweens.add({
           targets: this.archer,
@@ -74,88 +78,217 @@ export class Archer {
     });
   }
 
+  addHitboxes() {
+    if (!this.archer) return;
+
+    this.hitbox = this.scene.add.rectangle(
+      this.archer.x,
+      this.archer.y,
+      40,
+      120,
+      0xff0000,
+      0
+    );
+
+    this.scene.physics.add.existing(this.hitbox);
+
+    this.range = this.scene.add.rectangle(
+      this.archer.x,
+      this.archer.y,
+      800,
+      10,
+      0x00ff00,
+      0
+    );
+
+    this.scene.physics.add.existing(this.range);
+  }
+
   animations() {
     ARCHER.forEach((element) => {
-      this.scene.anims.create({
-        key: element.animationKey,
-        frames: this.scene.anims.generateFrameNumbers(
-          element.spriteKey,
-          element.animConfiguration
-        ),
-        frameRate: element.frameRate,
-        repeat: element.repeat,
-      });
+      if (!this.scene.anims.exists(element.animationKey)) {
+        this.scene.anims.create({
+          key: element.animationKey,
+          frames: this.scene.anims.generateFrameNumbers(
+            element.spriteKey,
+            element.animConfiguration
+          ),
+          frameRate: element.frameRate,
+          repeat: element.repeat,
+        });
+      }
     });
   }
 
   spawnArrow(direction: boolean) {
     if (!this.archer) return;
 
-    const arrow = this.scene.add.sprite(
+    this.arrow = this.scene.add.sprite(
       this.archer.x,
       this.archer.y - 30,
       "Arrow"
     );
-    arrow.scale = 3;
-    arrow.setFlipX(direction);
-    arrow.setData("velocity", direction ? -5 : 5);
+    this.arrow.scale = 3;
+    this.arrow.setFlipX(direction);
+    this.arrow.setData("velocity", direction ? -5 : 5);
 
-    this.arrows.push(arrow);
+    this.arrowHitbox = this.scene.add.rectangle(
+      this.arrow.x,
+      this.arrow.y,
+      this.arrow.width * 3,
+      this.arrow.height * 3,
+      0xff0000,
+      0
+    );
+
+    this.scene.physics.add.existing(this.arrowHitbox);
   }
 
-  updateArrows() {
-    this.arrows = this.arrows.filter((arrow) => {
-      arrow.x += arrow.getData("velocity");
+  updateArrowPosition(worldSpeed: number = 0) {
+    if (!this.arrow) return;
+    this.arrow.x += this.arrow.getData("velocity");
+    this.arrow.x += worldSpeed;
+    this.arrowHitbox?.setPosition(this.arrow.x, this.arrow.y);
+  }
 
-      const outOfBounds = arrow.x < 0 || arrow.x > this.scene.scale.width;
-      if (outOfBounds) {
-        arrow.destroy();
-        return false;
+  destroyArrow() {
+    if (!this.arrow) return;
+
+    this.arrow.destroy();
+    this.arrow = undefined;
+
+    if (this.arrowHitbox) {
+      this.arrowHitbox.destroy();
+      this.arrowHitbox = undefined;
+    }
+  }
+
+  playAnimation(key: string, loop: boolean = true) {
+    if (!this.archer) return;
+    this.archer.play(key, loop);
+  }
+
+  idle() {
+    this.playAnimation("archer_idle", true);
+  }
+
+  attack() {
+    if (!this.archer || this.arrowReload) return;
+    this.isAttacking = true;
+    this.canIdle = false;
+    this.playAnimation("archer_attack", true);
+  }
+
+  death() {
+    if (!this.archer || this.dead) return;
+    this.canIdle = false;
+    this.dead = true;
+    this.playAnimation("archer_death", true);
+    this.hitbox?.destroy();
+    this.range?.destroy();
+
+    if (this.scene instanceof MainScene) {
+      this.scene.increaseScore(1);
+    }
+  }
+
+  walk(speed: number = 0) {
+    if (!this.archer || this.isAttacking) return;
+    this.canIdle = false;
+    this.playAnimation("archer_walk", true);
+    this.archer.x += speed;
+  }
+
+  updateHitboxePositions() {
+    if (!this.archer) return;
+
+    this.hitbox?.setPosition(
+      this.archer.flipX ? this.archer.x + 20 : this.archer.x - 20,
+      this.archer.y
+    );
+
+    this.range?.setPosition(this.archer.x, this.archer.y);
+  }
+
+  knightInteractions() {
+    const knight = (this.scene as any).characters["knight"] as Knight;
+
+    if (!knight.knight) this.idle();
+
+    if (!this.archer || !knight.knight) return;
+
+    if (
+      knight &&
+      this.range &&
+      knight.range &&
+      Phaser.Geom.Intersects.RectangleToRectangle(
+        this.range.getBounds(),
+        knight.range.getBounds()
+      )
+    ) {
+      const directionToMove = knight.knight.x - this.archer.x;
+      if (directionToMove < 0) {
+        this.archer.setFlipX(true);
+      } else if (directionToMove > 0) {
+        this.archer.setFlipX(false);
       }
+      this.canIdle = true;
+      this.attack();
+    } else {
+      this.walk(this.archer.flipX ? -3 : 3);
+    }
 
-      return true;
-    });
+    if (
+      knight &&
+      this.hitbox &&
+      knight.attackHitbox &&
+      Phaser.Geom.Intersects.RectangleToRectangle(
+        this.hitbox.getBounds(),
+        knight.attackHitbox.getBounds()
+      )
+    ) {
+      this.death();
+    }
+
+    if (
+      knight &&
+      this.arrow &&
+      this.arrowHitbox &&
+      knight.shieldHitbox &&
+      Phaser.Geom.Intersects.RectangleToRectangle(
+        this.arrowHitbox.getBounds(),
+        knight.shieldHitbox.getBounds()
+      )
+    ) {
+      this.destroyArrow();
+    }
+
+    if (
+      knight &&
+      this.arrow &&
+      this.arrowHitbox &&
+      knight.hitbox &&
+      Phaser.Geom.Intersects.RectangleToRectangle(
+        this.arrowHitbox.getBounds(),
+        knight.hitbox.getBounds()
+      )
+    ) {
+      this.destroyArrow();
+      knight.death();
+    }
   }
 
-  update() {
-    this.updateArrows();
+  update(worldSpeed: number = 0) {
+    if (!this.archer) return;
+    this.archer.x += worldSpeed;
+    this.updateHitboxePositions();
+    this.updateArrowPosition(worldSpeed);
 
-    if (!this.archer || !this.keys || this.dead) return;
+    if (this.dead) return;
+    this.knightInteractions();
 
-    const { A, D, SHIFT, SPACE, W } = this.keys;
-
-    if (A.isDown) {
-      this.archer.setFlipX(true);
-      this.canIdle = true;
-      this.archer.play("archer_walk", true);
-    } else if (D.isDown) {
-      this.archer.setFlipX(false);
-      this.canIdle = true;
-      this.archer.play("archer_walk", true);
-    }
-
-    // Special melee attack
-    else if (SHIFT.isDown) {
-      this.canIdle = false;
-      this.archer.play("archer_special", true);
-    }
-
-    // Ranged attack
-    else if (SPACE.isDown) {
-      this.canIdle = false;
-      this.archer.play("archer_attack", true);
-    }
-
-    // Death
-    else if (W.isDown && !this.dead) {
-      this.canIdle = false;
-      this.dead = true;
-      this.archer.play("archer_death", true);
-    }
-
-    // Idle
-    else if (this.canIdle) {
-      this.archer.play("archer_idle", true);
+    if (this.canIdle) {
+      this.idle();
     }
   }
 }

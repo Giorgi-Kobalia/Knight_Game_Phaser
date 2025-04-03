@@ -1,48 +1,61 @@
 import Phaser from "phaser";
 import { ronin_constants } from "../../constants";
+import { Knight } from "./knight.entity";
+import { MainScene } from "../../scenes/main-scene.class";
 
 const RONIN = ronin_constants;
 
 export class Ronin {
-  private scene: Phaser.Scene;
-  private ronin?: Phaser.GameObjects.Sprite;
-  private canIdle: boolean = true;
-  private dead: boolean = false;
+  public scene: Phaser.Scene;
+  public ronin?: Phaser.GameObjects.Sprite;
+  public canIdle: boolean = true;
+  public dead: boolean = false;
+  public spawnPoint: number = 0;
+  public attackReload: boolean = false;
+  public isAttacking: boolean = false;
+  public spawnOrientation: "left" | "right" = "right";
 
-  private keys?: {
-    W: Phaser.Input.Keyboard.Key;
-    A: Phaser.Input.Keyboard.Key;
-    D: Phaser.Input.Keyboard.Key;
-    SPACE: Phaser.Input.Keyboard.Key;
-  };
+  public hitbox?: Phaser.GameObjects.Rectangle;
+  public range?: Phaser.GameObjects.Rectangle;
+  public attackHitbox?: Phaser.GameObjects.Rectangle;
 
   constructor(scene: Phaser.Scene) {
     this.scene = scene;
   }
 
   init() {
-    this.ronin = this.scene.add.sprite(1310, 476, RONIN[0].spriteKey);
+    this.spawnPoint = Math.random() < 0.5 ? 0 : this.scene.cameras.main.width;
+    this.spawnOrientation = this.spawnPoint === 0 ? "right" : "left";
+
+    this.ronin = this.scene.add.sprite(
+      this.spawnPoint,
+      480,
+      RONIN[0].spriteKey
+    );
+
     this.ronin.scale = 3;
 
-    this.keys = {
-      W: this.scene.input.keyboard!.addKey(Phaser.Input.Keyboard.KeyCodes.W),
-      A: this.scene.input.keyboard!.addKey(Phaser.Input.Keyboard.KeyCodes.A),
-      D: this.scene.input.keyboard!.addKey(Phaser.Input.Keyboard.KeyCodes.D),
-
-      SPACE: this.scene.input.keyboard!.addKey(
-        Phaser.Input.Keyboard.KeyCodes.SPACE
-      ),
-    };
+    this.ronin.setFlipX(this.spawnOrientation === "left");
 
     this.animations();
+    this.addHitboxes();
 
     this.ronin.on("animationcomplete", (anim: Phaser.Animations.Animation) => {
-      // Go to iddle after playing athis animations
-      if (["ronin_attack"].includes(anim.key)) {
+      if (anim.key === "ronin_attack") {
         this.canIdle = true;
+        this.isAttacking = false;
+        this.attackReload = true;
+
+        if (this.attackHitbox) {
+          this.attackHitbox.destroy();
+          this.attackHitbox = undefined;
+        }
+
+        setTimeout(() => {
+          this.attackReload = false;
+        }, 3000);
       }
 
-      // Handle death fade-out and destroy
       if (anim.key === "ronin_death") {
         this.scene.tweens.add({
           targets: this.ronin,
@@ -55,53 +68,206 @@ export class Ronin {
         });
       }
     });
+
+    this.ronin.on(
+      "animationupdate",
+      (
+        anim: Phaser.Animations.Animation,
+        frame: Phaser.Animations.AnimationFrame
+      ) => {
+        if (this.ronin && anim.key === "ronin_attack" && frame.index === 3) {
+          if (!this.attackHitbox) {
+            this.attackHitbox = this.scene.add.rectangle(
+              this.ronin.x,
+              this.ronin.y,
+              60,
+              100,
+              0xffff00,
+              0
+            );
+            this.scene.physics.add.existing(this.attackHitbox);
+          }
+        }
+
+        if (this.ronin && anim.key === "ronin_attack" && frame.index === 18) {
+          if (this.attackHitbox) {
+            this.attackHitbox.destroy();
+            this.attackHitbox = undefined;
+          }
+        }
+      }
+    );
+  }
+
+  addHitboxes() {
+    if (!this.ronin) return;
+
+    this.hitbox = this.scene.add.rectangle(
+      this.ronin.x,
+      this.ronin.y,
+      40,
+      120,
+      0xff0000,
+      0
+    );
+
+    this.scene.physics.add.existing(this.hitbox);
+
+    this.range = this.scene.add.rectangle(
+      this.ronin.x,
+      this.ronin.y,
+      80,
+      10,
+      0x00ff00,
+      0
+    );
+
+    this.scene.physics.add.existing(this.range);
   }
 
   animations() {
     RONIN.forEach((element) => {
-      this.scene.anims.create({
-        key: element.animationKey,
-        frames: this.scene.anims.generateFrameNumbers(
-          element.spriteKey,
-          element.animConfiguration
-        ),
-        frameRate: element.frameRate,
-        repeat: element.repeat,
-      });
+      if (!this.scene.anims.exists(element.animationKey)) {
+        this.scene.anims.create({
+          key: element.animationKey,
+          frames: this.scene.anims.generateFrameNumbers(
+            element.spriteKey,
+            element.animConfiguration
+          ),
+          frameRate: element.frameRate,
+          repeat: element.repeat,
+        });
+      }
     });
   }
 
-  update() {
-    if (!this.ronin || !this.keys || this.dead) return;
+  playAnimation(key: string, loop: boolean = true) {
+    if (!this.ronin) return;
+    this.ronin.play(key, loop);
+  }
 
-    const { A, D, SPACE, W } = this.keys;
+  idle() {
+    this.playAnimation("ronin_idle", true);
+  }
 
-    if (A.isDown) {
-      this.ronin.setFlipX(true);
+  attack() {
+    if (!this.ronin || this.attackReload) return;
+
+    this.isAttacking = true;
+    this.canIdle = false;
+    this.ronin.play("ronin_attack", true);
+  }
+
+  death() {
+    if (!this.ronin || this.dead) return;
+    this.canIdle = false;
+    this.dead = true;
+    this.playAnimation("ronin_death", true);
+    this.hitbox?.destroy();
+    this.range?.destroy();
+
+    if (this.attackHitbox) {
+      this.attackHitbox.destroy();
+      this.attackHitbox = undefined;
+    }
+
+    if (this.scene instanceof MainScene) {
+      this.scene.increaseScore(1);
+    }
+  }
+
+  walk(speed: number = 0) {
+    if (!this.ronin || this.isAttacking) return;
+    this.canIdle = false;
+    this.playAnimation("ronin_walk", true);
+    this.ronin.x += speed;
+  }
+
+  updateHitboxePositions() {
+    if (!this.ronin) return;
+
+    this.hitbox?.setPosition(this.ronin.x, this.ronin.y);
+    this.range?.setPosition(this.ronin.x, this.ronin.y);
+
+    if (this.attackHitbox) {
+      this.attackHitbox.setPosition(
+        this.ronin.flipX ? this.ronin.x - 60 : this.ronin.x + 60,
+        this.ronin.y
+      );
+    }
+  }
+
+  knightInteractions() {
+    const knight = (this.scene as any).characters["knight"] as Knight;
+
+    if (!knight.knight) this.idle();
+
+    if (!this.ronin || !knight.knight) return;
+
+    if (
+      knight &&
+      Phaser.Geom.Intersects.RectangleToRectangle(
+        this.range!.getBounds(),
+        knight.range!.getBounds()
+      )
+    ) {
+      const directionToMove = knight.knight.x - this.ronin.x;
+      if (directionToMove < 0) {
+        this.ronin.setFlipX(true);
+      } else if (directionToMove > 0) {
+        this.ronin.setFlipX(false);
+      }
       this.canIdle = true;
-      this.ronin.play("ronin_walk", true);
-    } else if (D.isDown) {
-      this.ronin.setFlipX(false);
-      this.canIdle = true;
-      this.ronin.play("ronin_walk", true);
+      this.attack();
+    } else {
+      this.walk(this.ronin.flipX ? -6 : 6);
     }
 
-    // Handle attack
-    else if (SPACE.isDown) {
-      this.canIdle = false;
-      this.ronin.play("ronin_attack", true);
+    if (
+      knight &&
+      this.hitbox &&
+      knight.attackHitbox &&
+      Phaser.Geom.Intersects.RectangleToRectangle(
+        this.hitbox.getBounds(),
+        knight.attackHitbox.getBounds()
+      )
+    ) {
+      this.death();
     }
 
-    // Handle death
-    else if (W.isDown) {
-      this.canIdle = false;
-      this.dead = true;
-      this.ronin.play("ronin_death", true);
-    }
+    if (knight && this.attackHitbox) {
+      const attackBounds = this.attackHitbox.getBounds();
 
-    // Handle idle state
-    else if (this.canIdle) {
-      this.ronin.play("ronin_idle", true);
+      const hitShield =
+        knight.shieldHitbox &&
+        Phaser.Geom.Intersects.RectangleToRectangle(
+          attackBounds,
+          knight.shieldHitbox.getBounds()
+        );
+
+      if (!hitShield && knight.hitbox) {
+        const hitKnight = Phaser.Geom.Intersects.RectangleToRectangle(
+          attackBounds,
+          knight.hitbox.getBounds()
+        );
+
+        if (hitKnight) {
+          knight.death();
+        }
+      }
+    }
+  }
+
+  update(worldSpeed: number = 0) {
+    if (!this.ronin) return;
+    this.ronin.x += worldSpeed;
+    this.updateHitboxePositions();
+
+    if (this.dead) return;
+    this.knightInteractions();
+
+    if (this.canIdle) {
+      this.idle();
     }
   }
 }
