@@ -127,15 +127,17 @@ export class Ronin {
 
   animations() {
     RONIN.forEach((element) => {
-      this.scene.anims.create({
-        key: element.animationKey,
-        frames: this.scene.anims.generateFrameNumbers(
-          element.spriteKey,
-          element.animConfiguration
-        ),
-        frameRate: element.frameRate,
-        repeat: element.repeat,
-      });
+      if (!this.scene.anims.exists(element.animationKey)) {
+        this.scene.anims.create({
+          key: element.animationKey,
+          frames: this.scene.anims.generateFrameNumbers(
+            element.spriteKey,
+            element.animConfiguration
+          ),
+          frameRate: element.frameRate,
+          repeat: element.repeat,
+        });
+      }
     });
   }
 
