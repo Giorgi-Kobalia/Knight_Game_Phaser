@@ -1,6 +1,7 @@
 import Phaser from "phaser";
 import { archer_constants } from "../../constants";
 import { Knight } from "./knight.entity";
+import { MainScene } from "../../scenes/main-scene.class";
 
 const ARCHER = archer_constants;
 
@@ -183,6 +184,10 @@ export class Archer {
     this.playAnimation("archer_death", true);
     this.hitbox?.destroy();
     this.range?.destroy();
+
+    if (this.scene instanceof MainScene) {
+      this.scene.increaseScore(1);
+    }
   }
 
   walk(speed: number = 0) {

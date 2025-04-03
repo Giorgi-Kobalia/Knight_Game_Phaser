@@ -1,6 +1,7 @@
 import Phaser from "phaser";
 import { paladin_constants } from "../../constants";
 import { Knight } from "./knight.entity";
+import { MainScene } from "../../scenes/main-scene.class";
 
 const PALADIN = paladin_constants;
 
@@ -176,6 +177,10 @@ export class Paladin {
     if (this.attackHitbox) {
       this.attackHitbox.destroy();
       this.attackHitbox = undefined;
+    }
+
+    if (this.scene instanceof MainScene) {
+      this.scene.increaseScore(1);
     }
   }
 

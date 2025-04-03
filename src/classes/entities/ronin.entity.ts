@@ -1,6 +1,7 @@
 import Phaser from "phaser";
 import { ronin_constants } from "../../constants";
 import { Knight } from "./knight.entity";
+import { MainScene } from "../../scenes/main-scene.class";
 
 const RONIN = ronin_constants;
 
@@ -166,6 +167,10 @@ export class Ronin {
     if (this.attackHitbox) {
       this.attackHitbox.destroy();
       this.attackHitbox = undefined;
+    }
+
+    if (this.scene instanceof MainScene) {
+      this.scene.increaseScore(1);
     }
   }
 

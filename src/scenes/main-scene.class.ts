@@ -28,6 +28,8 @@ interface CharacterConfig {
 
 export class MainScene extends Phaser.Scene {
   private background!: Background;
+  private scoreText!: Phaser.GameObjects.Text;
+  private score: number = 0;
 
   private characters: {
     [key: string]: Knight | Archer | Necromancer | Paladin | Ronin;
@@ -38,7 +40,7 @@ export class MainScene extends Phaser.Scene {
     | typeof Necromancer
     | typeof Paladin
     | typeof Ronin
-  )[] = [Archer, Necromancer, Paladin, Ronin];
+  )[] = [Archer];
 
   private enemyCounter: number = 0;
 
@@ -72,7 +74,6 @@ export class MainScene extends Phaser.Scene {
       this.load.image(element.key, element.path);
     });
 
-    // Preload all character spritesheets
     loadSpritesheets(archer_constants);
     loadSpritesheets(necromancer_constants);
     loadSpritesheets(paladin_constants);
@@ -95,6 +96,15 @@ export class MainScene extends Phaser.Scene {
       this.characters[character.name] = characterInstance;
     });
 
+    this.scoreText = this.add.text(850, 50, `Score: 0`, {
+      fontSize: "32px",
+      color: "#fff",
+      fontFamily: "Arial",
+      resolution: 2,
+    });
+    
+    this.scoreText.setOrigin(0.5, 0);
+
     this.time.addEvent({
       delay: 5000,
       callback: this.spawnEnemy,
@@ -115,7 +125,16 @@ export class MainScene extends Phaser.Scene {
     this.characters[`enemy_${this.enemyCounter++}`] = enemy;
   }
 
+  increaseScore(amount: number) {
+    this.score += amount;
+    console.log("Current Score:", this.score);
+  }
+
   update() {
+    if (this.scoreText) {
+      this.scoreText.setText(`Score: ${this.score}`);
+    }
+
     let worldSpeed = 0;
 
     const knight = this.characters["knight"] as Knight;

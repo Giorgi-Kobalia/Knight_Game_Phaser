@@ -1,6 +1,7 @@
 import Phaser from "phaser";
 import { necromancer_constants } from "../../constants";
 import { Knight } from "./knight.entity";
+import { MainScene } from "../../scenes/main-scene.class";
 
 const NECROMANCER = necromancer_constants;
 
@@ -189,8 +190,13 @@ export class Necromancer {
     this.canIdle = false;
     this.dead = true;
     this.playAnimation("necromancer_death", true);
+    
     this.hitbox?.destroy();
     this.range?.destroy();
+    
+    if (this.scene instanceof MainScene) {
+      this.scene.increaseScore(1);
+    }
   }
 
   walk(speed: number = 0) {
