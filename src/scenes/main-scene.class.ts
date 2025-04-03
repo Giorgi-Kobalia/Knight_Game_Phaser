@@ -38,7 +38,7 @@ export class MainScene extends Phaser.Scene {
     | typeof Necromancer
     | typeof Paladin
     | typeof Ronin
-  )[] = [Paladin];
+  )[] = [Archer, Necromancer, Paladin, Ronin];
 
   private enemyCounter: number = 0;
 
@@ -118,9 +118,9 @@ export class MainScene extends Phaser.Scene {
   update() {
     let worldSpeed = 0;
 
-    // Determine world speed based on knight's movement
     const knight = this.characters["knight"] as Knight;
-    if (knight.knight) {
+
+    if (knight.knight && knight.dead === false) {
       if (this.input.keyboard?.addKey("A").isDown) {
         worldSpeed = 6;
       } else if (this.input.keyboard?.addKey("D").isDown) {
