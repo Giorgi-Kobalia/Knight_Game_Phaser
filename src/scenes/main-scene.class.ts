@@ -29,6 +29,7 @@ interface CharacterConfig {
 export class MainScene extends Phaser.Scene {
   private background!: Background;
   private scoreText!: Phaser.GameObjects.Text;
+  private restart!: Phaser.GameObjects.Text;
   private score: number = 0;
 
   private characters: {
@@ -102,14 +103,42 @@ export class MainScene extends Phaser.Scene {
       fontFamily: "Arial",
       resolution: 2,
     });
-    
+
     this.scoreText.setOrigin(0.5, 0);
+
+    this.creatreRestartBtn();
 
     this.time.addEvent({
       delay: 5000,
       callback: this.spawnEnemy,
       callbackScope: this,
       loop: true,
+    });
+  }
+
+  creatreRestartBtn() {
+    this.restart = this.add.text(850, 350, `RESTART`, {
+      fontSize: "50px",
+      color: "#fff",
+      fontFamily: "Arial",
+      resolution: 2,
+    });
+
+    this.restart.setOrigin(0.5, 0);
+
+    this.restart.setInteractive();
+    this.restart.alpha = 0;
+
+    this.restart.on("pointerover", () => {
+      this.input.setDefaultCursor("pointer");
+    });
+
+    this.restart.on("pointerout", () => {
+      this.input.setDefaultCursor("default");
+    });
+
+    this.restart.on("pointerdown", () => {
+      location.reload();
     });
   }
 
@@ -145,6 +174,10 @@ export class MainScene extends Phaser.Scene {
       } else if (this.input.keyboard?.addKey("D").isDown) {
         worldSpeed = -6;
       }
+    }
+
+    if (knight.dead === true) {
+      this.restart.alpha = 1;
     }
 
     // Update enemies with worldSpeed
