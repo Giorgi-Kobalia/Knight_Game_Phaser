@@ -167,7 +167,7 @@ export class MainScene extends Phaser.Scene {
 
     const knight = this.characters["knight"] as Knight;
 
-    if (knight.knight && knight.dead === false) {
+    if (knight.knight && !knight.dead  && !knight.isAttacking) {
       if (this.input.keyboard?.addKey("A").isDown) {
         worldSpeed = 6;
       } else if (this.input.keyboard?.addKey("D").isDown) {
