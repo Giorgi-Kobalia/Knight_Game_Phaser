@@ -41,7 +41,7 @@ export class MainScene extends Phaser.Scene {
     | typeof Necromancer
     | typeof Paladin
     | typeof Ronin
-  )[] = [Archer];
+  )[] = [Ronin];
 
   private enemyCounter: number = 0;
 
@@ -143,6 +143,18 @@ export class MainScene extends Phaser.Scene {
   }
 
   spawnEnemy() {
+    if (this.score >= 5 && !this.enemyPool.includes(Archer)) {
+      this.enemyPool.push(Archer);
+    }
+
+    if (this.score >= 10 && !this.enemyPool.includes(Necromancer)) {
+      this.enemyPool.push(Necromancer);
+    }
+
+    if (this.score >= 15 && !this.enemyPool.includes(Paladin)) {
+      this.enemyPool.push(Paladin);
+    }
+
     const knight = this.characters["knight"] as Knight;
 
     if (knight && knight.dead) return;
@@ -167,7 +179,7 @@ export class MainScene extends Phaser.Scene {
 
     const knight = this.characters["knight"] as Knight;
 
-    if (knight.knight && !knight.dead  && !knight.isAttacking) {
+    if (knight.knight && !knight.dead && !knight.isAttacking) {
       if (this.input.keyboard?.addKey("A").isDown) {
         worldSpeed = 6;
       } else if (this.input.keyboard?.addKey("D").isDown) {
