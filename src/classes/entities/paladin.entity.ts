@@ -5,7 +5,7 @@ import { MainScene } from "../../scenes/main-scene.class";
 
 const PALADIN = paladin_constants;
 
-export class Paladin {
+export class Paladin extends Phaser.GameObjects.Sprite {
   public scene: Phaser.Scene;
   public paladin?: Phaser.GameObjects.Sprite;
   public canIdle: boolean = true;
@@ -19,7 +19,8 @@ export class Paladin {
   public range?: Phaser.GameObjects.Rectangle;
   public attackHitbox?: Phaser.GameObjects.Rectangle;
 
-  constructor(scene: Phaser.Scene) {
+    constructor(scene: Phaser.Scene) {
+    super(scene, 0, 0, "");
     this.scene = scene;
   }
 
@@ -214,7 +215,7 @@ export class Paladin {
   }
 
   knightInteractions() {
-    const knight = (this.scene as any).characters["knight"] as Knight;
+    const knight = (this.scene as any).knight as Knight
 
     if (!knight.knight) this.idle();
 

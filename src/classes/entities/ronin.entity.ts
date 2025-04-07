@@ -5,7 +5,7 @@ import { MainScene } from "../../scenes/main-scene.class";
 
 const RONIN = ronin_constants;
 
-export class Ronin {
+export class Ronin extends Phaser.GameObjects.Sprite {
   public scene: Phaser.Scene;
   public ronin?: Phaser.GameObjects.Sprite;
   public canIdle: boolean = true;
@@ -20,6 +20,7 @@ export class Ronin {
   public attackHitbox?: Phaser.GameObjects.Rectangle;
 
   constructor(scene: Phaser.Scene) {
+    super(scene, 0, 0, "");
     this.scene = scene;
   }
 
@@ -198,7 +199,7 @@ export class Ronin {
   }
 
   knightInteractions() {
-    const knight = (this.scene as any).characters["knight"] as Knight;
+    const knight = (this.scene as any).knight as Knight
 
     if (!knight.knight) this.idle();
 

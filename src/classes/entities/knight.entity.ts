@@ -3,8 +3,7 @@ import { knight_constants } from "../../constants";
 
 const KNIGHT = knight_constants;
 
-export class Knight {
-  public scene: Phaser.Scene;
+export class Knight extends Phaser.GameObjects.Sprite {
   public knight?: Phaser.GameObjects.Sprite;
   public canIdle: boolean = true;
   public isShieldActevated: boolean = false;
@@ -23,6 +22,7 @@ export class Knight {
   };
 
   constructor(scene: Phaser.Scene) {
+    super(scene, 0, 0, "");
     this.scene = scene;
   }
 
@@ -175,7 +175,7 @@ export class Knight {
       this.attackHitbox = this.scene.add.rectangle(
         this.knight.x,
         this.knight.y,
-        60,
+        70,
         100,
         0xffff00,
         0

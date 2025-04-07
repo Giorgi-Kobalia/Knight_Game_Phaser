@@ -16,24 +16,16 @@ import {
 } from "../constants";
 import { bg_manifest } from "../manifests";
 
-interface CharacterConfig {
-  name: string;
-  classRef:
-    | typeof Knight
-    | typeof Archer
-    | typeof Necromancer
-    | typeof Paladin
-    | typeof Ronin;
-}
-
 export class MainScene extends Phaser.Scene {
   private background!: Background;
+  private knight!: Knight;
   private scoreText!: Phaser.GameObjects.Text;
   private restart!: Phaser.GameObjects.Text;
+  private intro!: Phaser.GameObjects.Text;
   private score: number = 0;
 
   private characters: {
-    [key: string]: Knight | Archer | Necromancer | Paladin | Ronin;
+    [key: string]: Archer | Necromancer | Paladin | Ronin;
   } = {};
 
   private enemyPool: (
@@ -86,18 +78,10 @@ export class MainScene extends Phaser.Scene {
 
   create() {
     this.background = new Background(this);
-
-    const characters: CharacterConfig[] = [
-      { name: "knight", classRef: Knight },
-    ];
-
     this.background.init();
 
-    characters.forEach((character) => {
-      const characterInstance = new character.classRef(this);
-      characterInstance.init();
-      this.characters[character.name] = characterInstance;
-    });
+    this.knight = new Knight(this);
+    this.knight.init();
 
     this.scoreText = this.add.text(850, 20, `SCORE : 0`, {
       font: "normal 40px custom",
@@ -108,6 +92,7 @@ export class MainScene extends Phaser.Scene {
     this.scoreText.setOrigin(0.5, 0);
 
     this.creatreRestartBtn();
+    this.createIntro();
 
     this.time.addEvent({
       delay: 5000,
@@ -142,7 +127,25 @@ export class MainScene extends Phaser.Scene {
     });
   }
 
+  createIntro() {
+    this.intro = this.add.text(
+      850,
+      150,
+      "Use A and D for move! Use SHIFT for shield! Use SPACE for attack!",
+      {
+        font: "normal 50px custom",
+        resolution: 2,
+        wordWrap: { width: 600 },
+        lineSpacing: 20,
+      }
+    );
+
+    this.intro.setOrigin(0.5, 0);
+  }
+
   spawnEnemy() {
+    if (this.intro.alpha) this.intro.alpha = 0;
+
     if (this.score >= 5 && !this.enemyPool.includes(Archer)) {
       this.enemyPool.push(Archer);
     }
@@ -155,9 +158,7 @@ export class MainScene extends Phaser.Scene {
       this.enemyPool.push(Paladin);
     }
 
-    const knight = this.characters["knight"] as Knight;
-
-    if (knight && knight.dead) return;
+    if (this.knight.knight && this.knight.dead) return;
 
     const EnemyClass = Phaser.Utils.Array.GetRandom(this.enemyPool);
     const enemy = new EnemyClass(this);
@@ -177,9 +178,7 @@ export class MainScene extends Phaser.Scene {
 
     let worldSpeed = 0;
 
-    const knight = this.characters["knight"] as Knight;
-
-    if (knight.knight && !knight.dead && !knight.isAttacking) {
+    if (this.knight.knight && !this.knight.dead && !this.knight.isAttacking) {
       if (this.input.keyboard?.addKey("A").isDown) {
         worldSpeed = 6;
       } else if (this.input.keyboard?.addKey("D").isDown) {
@@ -187,9 +186,11 @@ export class MainScene extends Phaser.Scene {
       }
     }
 
-    if (knight.dead === true) {
+    if (this.knight.dead === true) {
       this.restart.alpha = 1;
     }
+
+    this.knight.update();
 
     Object.values(this.characters).forEach((character) => {
       if (
@@ -199,8 +200,6 @@ export class MainScene extends Phaser.Scene {
         character instanceof Paladin
       ) {
         character.update(worldSpeed);
-      } else {
-        character.update();
       }
     });
 

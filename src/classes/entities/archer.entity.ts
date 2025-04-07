@@ -5,7 +5,7 @@ import { MainScene } from "../../scenes/main-scene.class";
 
 const ARCHER = archer_constants;
 
-export class Archer {
+export class Archer extends Phaser.GameObjects.Sprite {
   public scene: Phaser.Scene;
   public archer?: Phaser.GameObjects.Sprite;
   public arrow?: Phaser.GameObjects.Sprite;
@@ -21,6 +21,7 @@ export class Archer {
   public arrowHitbox?: Phaser.GameObjects.Rectangle;
 
   constructor(scene: Phaser.Scene) {
+    super(scene, 0, 0, "");
     this.scene = scene;
   }
 
@@ -211,7 +212,7 @@ export class Archer {
   }
 
   knightInteractions() {
-    const knight = (this.scene as any).characters["knight"] as Knight;
+    const knight = (this.scene as any).knight as Knight;
 
     if (!knight.knight) this.idle();
 

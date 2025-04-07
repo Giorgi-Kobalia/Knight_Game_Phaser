@@ -5,12 +5,12 @@ import { MainScene } from "../../scenes/main-scene.class";
 
 const NECROMANCER = necromancer_constants;
 
-export class Necromancer {
-  private scene: Phaser.Scene;
-  private necromancer?: Phaser.GameObjects.Sprite;
-  private skull?: Phaser.GameObjects.Sprite;
-  private canIdle: boolean = true;
-  private dead: boolean = false;
+export class Necromancer extends Phaser.GameObjects.Sprite{
+  public scene: Phaser.Scene;
+  public necromancer?: Phaser.GameObjects.Sprite;
+  public skull?: Phaser.GameObjects.Sprite;
+  public canIdle: boolean = true;
+  public dead: boolean = false;
   public spawnPoint: number = 0;
   public skullReload: boolean = false;
   public isAttacking: boolean = false;
@@ -20,7 +20,8 @@ export class Necromancer {
   public range?: Phaser.GameObjects.Rectangle;
   public skullHitbox?: Phaser.GameObjects.Rectangle;
 
-  constructor(scene: Phaser.Scene) {
+    constructor(scene: Phaser.Scene) {
+    super(scene, 0, 0, "");
     this.scene = scene;
   }
 
@@ -222,7 +223,7 @@ export class Necromancer {
   }
 
   knightInteractions() {
-    const knight = (this.scene as any).characters["knight"] as Knight;
+    const knight = (this.scene as any).knight as Knight
 
     if (!knight.knight) this.idle();
 
