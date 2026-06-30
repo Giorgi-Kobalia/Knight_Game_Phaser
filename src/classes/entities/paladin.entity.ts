@@ -1,25 +1,30 @@
 import Phaser from "phaser";
 import { paladin_constants } from "../../constants";
-import { Knight } from "./knight.entity";
 import { MainScene } from "../../scenes/main-scene.class";
 
 const PALADIN = paladin_constants;
+
+const OFFSCREEN_MARGIN = 200;
 
 export class Paladin extends Phaser.GameObjects.Sprite {
   public scene: Phaser.Scene;
   public paladin?: Phaser.GameObjects.Sprite;
   public canIdle: boolean = true;
   public dead: boolean = false;
+  public isFullyDead: boolean = false;
   public spawnPoint: number = 0;
   public attackReload: boolean = false;
   public isAttacking: boolean = false;
   public spawnOrientation: "left" | "right" = "right";
 
+  private hp: number = 2;
+  private hitCooldown: boolean = false;
+
   public hitbox?: Phaser.GameObjects.Rectangle;
   public range?: Phaser.GameObjects.Rectangle;
   public attackHitbox?: Phaser.GameObjects.Rectangle;
 
-    constructor(scene: Phaser.Scene) {
+  constructor(scene: Phaser.Scene) {
     super(scene, 0, 0, "");
     this.scene = scene;
   }
@@ -35,7 +40,6 @@ export class Paladin extends Phaser.GameObjects.Sprite {
     );
 
     this.paladin.scale = 3;
-
     this.paladin.setFlipX(this.spawnOrientation === "left");
 
     this.animations();
@@ -49,13 +53,14 @@ export class Paladin extends Phaser.GameObjects.Sprite {
           this.isAttacking = false;
           this.attackReload = true;
 
-          setTimeout(() => {
+          this.scene.time.delayedCall(3000, () => {
             this.attackReload = false;
-          }, 3000);
+          });
         }
 
         if (anim.key === "paladin_hit") {
           this.canIdle = true;
+          this.isAttacking = false;
         }
 
         if (anim.key === "paladin_death") {
@@ -66,6 +71,7 @@ export class Paladin extends Phaser.GameObjects.Sprite {
             onComplete: () => {
               this.paladin?.destroy();
               this.paladin = undefined;
+              this.isFullyDead = true;
             },
           });
         }
@@ -121,7 +127,6 @@ export class Paladin extends Phaser.GameObjects.Sprite {
       0xff0000,
       0
     );
-
     this.scene.physics.add.existing(this.hitbox);
 
     this.range = this.scene.add.rectangle(
@@ -132,7 +137,6 @@ export class Paladin extends Phaser.GameObjects.Sprite {
       0x00ff00,
       0
     );
-
     this.scene.physics.add.existing(this.range);
   }
 
@@ -162,20 +166,54 @@ export class Paladin extends Phaser.GameObjects.Sprite {
   }
 
   attack() {
-    if (!this.paladin || this.attackReload) return;
-
+    if (!this.paladin || this.attackReload || this.hitCooldown) return;
     this.isAttacking = true;
     this.canIdle = false;
     this.paladin.play("paladin_attack", true);
+  }
+
+  receiveDamage() {
+    if (!this.paladin || this.dead || this.hitCooldown) return;
+    this.hitCooldown = true;
+    this.hp--;
+
+    if (this.hp <= 0) {
+      this.death();
+      return;
+    }
+
+    // First hit: red flash + hit animation
+    this.isAttacking = true;
+    this.canIdle = false;
+
+    if (this.attackHitbox) {
+      this.attackHitbox.destroy();
+      this.attackHitbox = undefined;
+    }
+
+    this.paladin.setTint(0xff6666);
+    this.scene.time.delayedCall(80, () => {
+      this.paladin?.clearTint();
+      if (!this.dead) this.playAnimation("paladin_hit", true);
+    });
+
+    this.scene.time.delayedCall(700, () => {
+      this.hitCooldown = false;
+    });
   }
 
   death() {
     if (!this.paladin || this.dead) return;
     this.canIdle = false;
     this.dead = true;
-    this.playAnimation("paladin_death", true);
+
+    const popupX = this.paladin.x;
+    const popupY = this.paladin.y;
+
     this.hitbox?.destroy();
+    this.hitbox = undefined;
     this.range?.destroy();
+    this.range = undefined;
 
     if (this.attackHitbox) {
       this.attackHitbox.destroy();
@@ -183,21 +221,33 @@ export class Paladin extends Phaser.GameObjects.Sprite {
     }
 
     if (this.scene instanceof MainScene) {
-      this.scene.increaseScore(1);
+      this.scene.increaseScore(4, popupX, popupY);
     }
+
+    this.paladin.setTint(0xffffff);
+    this.scene.time.delayedCall(80, () => {
+      this.paladin?.clearTint();
+      this.playAnimation("paladin_death", true);
+    });
   }
 
   walk(speed: number = 0) {
-    if (!this.paladin || this.isAttacking) return;
+    if (!this.paladin || this.isAttacking || this.hitCooldown) return;
     this.canIdle = false;
     this.playAnimation("paladin_walk", true);
     this.paladin.x += speed;
   }
 
-  hit() {
-    if (!this.paladin) return;
-    this.canIdle = false;
-    this.paladin.play("paladin_hit", true);
+  cleanup() {
+    this.attackHitbox?.destroy();
+    this.attackHitbox = undefined;
+    this.hitbox?.destroy();
+    this.hitbox = undefined;
+    this.range?.destroy();
+    this.range = undefined;
+    this.paladin?.destroy();
+    this.paladin = undefined;
+    this.isFullyDead = true;
   }
 
   updateHitboxePositions() {
@@ -215,17 +265,17 @@ export class Paladin extends Phaser.GameObjects.Sprite {
   }
 
   knightInteractions() {
-    const knight = (this.scene as any).knight as Knight
+    const knight = (this.scene as MainScene).knight;
 
     if (!knight.knight) this.idle();
-
     if (!this.paladin || !knight.knight) return;
 
     if (
-      knight &&
+      this.range &&
+      knight.range &&
       Phaser.Geom.Intersects.RectangleToRectangle(
-        this.range!.getBounds(),
-        knight.range!.getBounds()
+        this.range.getBounds(),
+        knight.range.getBounds()
       )
     ) {
       const directionToMove = knight.knight.x - this.paladin.x;
@@ -241,7 +291,6 @@ export class Paladin extends Phaser.GameObjects.Sprite {
     }
 
     if (
-      knight &&
       this.hitbox &&
       knight.attackHitbox &&
       Phaser.Geom.Intersects.RectangleToRectangle(
@@ -249,10 +298,10 @@ export class Paladin extends Phaser.GameObjects.Sprite {
         knight.attackHitbox.getBounds()
       )
     ) {
-      this.death();
+      this.receiveDamage();
     }
 
-    if (knight && this.attackHitbox) {
+    if (this.attackHitbox) {
       const attackBounds = this.attackHitbox.getBounds();
 
       const hitShield =
@@ -262,14 +311,14 @@ export class Paladin extends Phaser.GameObjects.Sprite {
           knight.shieldHitbox.getBounds()
         );
 
-      if (!hitShield && knight.hitbox) {
+      if (!hitShield && knight.hitbox && !knight.isInvincible) {
         const hitKnight = Phaser.Geom.Intersects.RectangleToRectangle(
           attackBounds,
           knight.hitbox.getBounds()
         );
 
         if (hitKnight) {
-          knight.death();
+          knight.takeDamage();
         }
       }
     }
@@ -281,6 +330,16 @@ export class Paladin extends Phaser.GameObjects.Sprite {
     this.updateHitboxePositions();
 
     if (this.dead) return;
+
+    const screenWidth = this.scene.cameras.main.width;
+    if (
+      this.paladin.x < -OFFSCREEN_MARGIN ||
+      this.paladin.x > screenWidth + OFFSCREEN_MARGIN
+    ) {
+      this.cleanup();
+      return;
+    }
+
     this.knightInteractions();
 
     if (this.canIdle) {

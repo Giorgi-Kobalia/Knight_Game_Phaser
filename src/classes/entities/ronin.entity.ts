@@ -1,15 +1,17 @@
 import Phaser from "phaser";
 import { ronin_constants } from "../../constants";
-import { Knight } from "./knight.entity";
 import { MainScene } from "../../scenes/main-scene.class";
 
 const RONIN = ronin_constants;
+
+const OFFSCREEN_MARGIN = 200;
 
 export class Ronin extends Phaser.GameObjects.Sprite {
   public scene: Phaser.Scene;
   public ronin?: Phaser.GameObjects.Sprite;
   public canIdle: boolean = true;
   public dead: boolean = false;
+  public isFullyDead: boolean = false;
   public spawnPoint: number = 0;
   public attackReload: boolean = false;
   public isAttacking: boolean = false;
@@ -35,7 +37,6 @@ export class Ronin extends Phaser.GameObjects.Sprite {
     );
 
     this.ronin.scale = 3;
-
     this.ronin.setFlipX(this.spawnOrientation === "left");
 
     this.animations();
@@ -52,9 +53,9 @@ export class Ronin extends Phaser.GameObjects.Sprite {
           this.attackHitbox = undefined;
         }
 
-        setTimeout(() => {
+        this.scene.time.delayedCall(3000, () => {
           this.attackReload = false;
-        }, 3000);
+        });
       }
 
       if (anim.key === "ronin_death") {
@@ -65,6 +66,7 @@ export class Ronin extends Phaser.GameObjects.Sprite {
           onComplete: () => {
             this.ronin?.destroy();
             this.ronin = undefined;
+            this.isFullyDead = true;
           },
         });
       }
@@ -111,7 +113,6 @@ export class Ronin extends Phaser.GameObjects.Sprite {
       0xff0000,
       0
     );
-
     this.scene.physics.add.existing(this.hitbox);
 
     this.range = this.scene.add.rectangle(
@@ -122,7 +123,6 @@ export class Ronin extends Phaser.GameObjects.Sprite {
       0x00ff00,
       0
     );
-
     this.scene.physics.add.existing(this.range);
   }
 
@@ -153,7 +153,6 @@ export class Ronin extends Phaser.GameObjects.Sprite {
 
   attack() {
     if (!this.ronin || this.attackReload) return;
-
     this.isAttacking = true;
     this.canIdle = false;
     this.ronin.play("ronin_attack", true);
@@ -163,9 +162,14 @@ export class Ronin extends Phaser.GameObjects.Sprite {
     if (!this.ronin || this.dead) return;
     this.canIdle = false;
     this.dead = true;
-    this.playAnimation("ronin_death", true);
+
+    const popupX = this.ronin.x;
+    const popupY = this.ronin.y;
+
     this.hitbox?.destroy();
+    this.hitbox = undefined;
     this.range?.destroy();
+    this.range = undefined;
 
     if (this.attackHitbox) {
       this.attackHitbox.destroy();
@@ -173,8 +177,14 @@ export class Ronin extends Phaser.GameObjects.Sprite {
     }
 
     if (this.scene instanceof MainScene) {
-      this.scene.increaseScore(1);
+      this.scene.increaseScore(1, popupX, popupY);
     }
+
+    this.ronin.setTint(0xffffff);
+    this.scene.time.delayedCall(80, () => {
+      this.ronin?.clearTint();
+      this.playAnimation("ronin_death", true);
+    });
   }
 
   walk(speed: number = 0) {
@@ -182,6 +192,18 @@ export class Ronin extends Phaser.GameObjects.Sprite {
     this.canIdle = false;
     this.playAnimation("ronin_walk", true);
     this.ronin.x += speed;
+  }
+
+  cleanup() {
+    this.attackHitbox?.destroy();
+    this.attackHitbox = undefined;
+    this.hitbox?.destroy();
+    this.hitbox = undefined;
+    this.range?.destroy();
+    this.range = undefined;
+    this.ronin?.destroy();
+    this.ronin = undefined;
+    this.isFullyDead = true;
   }
 
   updateHitboxePositions() {
@@ -199,17 +221,17 @@ export class Ronin extends Phaser.GameObjects.Sprite {
   }
 
   knightInteractions() {
-    const knight = (this.scene as any).knight as Knight
+    const knight = (this.scene as MainScene).knight;
 
     if (!knight.knight) this.idle();
-
     if (!this.ronin || !knight.knight) return;
 
     if (
-      knight &&
+      this.range &&
+      knight.range &&
       Phaser.Geom.Intersects.RectangleToRectangle(
-        this.range!.getBounds(),
-        knight.range!.getBounds()
+        this.range.getBounds(),
+        knight.range.getBounds()
       )
     ) {
       const directionToMove = knight.knight.x - this.ronin.x;
@@ -221,11 +243,10 @@ export class Ronin extends Phaser.GameObjects.Sprite {
       this.canIdle = true;
       this.attack();
     } else {
-      this.walk(this.ronin.flipX ? -6 : 6);
+      this.walk(this.ronin.flipX ? -4 : 4);
     }
 
     if (
-      knight &&
       this.hitbox &&
       knight.attackHitbox &&
       Phaser.Geom.Intersects.RectangleToRectangle(
@@ -236,7 +257,7 @@ export class Ronin extends Phaser.GameObjects.Sprite {
       this.death();
     }
 
-    if (knight && this.attackHitbox) {
+    if (this.attackHitbox) {
       const attackBounds = this.attackHitbox.getBounds();
 
       const hitShield =
@@ -246,14 +267,14 @@ export class Ronin extends Phaser.GameObjects.Sprite {
           knight.shieldHitbox.getBounds()
         );
 
-      if (!hitShield && knight.hitbox) {
+      if (!hitShield && knight.hitbox && !knight.isInvincible) {
         const hitKnight = Phaser.Geom.Intersects.RectangleToRectangle(
           attackBounds,
           knight.hitbox.getBounds()
         );
 
         if (hitKnight) {
-          knight.death();
+          knight.takeDamage();
         }
       }
     }
@@ -265,6 +286,16 @@ export class Ronin extends Phaser.GameObjects.Sprite {
     this.updateHitboxePositions();
 
     if (this.dead) return;
+
+    const screenWidth = this.scene.cameras.main.width;
+    if (
+      this.ronin.x < -OFFSCREEN_MARGIN ||
+      this.ronin.x > screenWidth + OFFSCREEN_MARGIN
+    ) {
+      this.cleanup();
+      return;
+    }
+
     this.knightInteractions();
 
     if (this.canIdle) {

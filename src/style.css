@@ -7,7 +7,7 @@
 
 body {
   width: 100%;
-  background-color: #577277;
+  background-color: #0C1122;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -15,11 +15,3 @@ body {
   height: 100vh;
   overflow: hidden;
 }
-
-/* #app canvas {
-  width: 100%;
-  max-width: 1600px;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-} */

@@ -8,6 +8,9 @@ export class Knight extends Phaser.GameObjects.Sprite {
   public canIdle: boolean = true;
   public isShieldActevated: boolean = false;
   public dead: boolean = false;
+  public isInvincible: boolean = false;
+  public lives: number = 3;
+  public isFullyDead: boolean = false;
   public hitbox?: Phaser.GameObjects.Rectangle;
   public attackHitbox?: Phaser.GameObjects.Rectangle;
   public shieldHitbox?: Phaser.GameObjects.Rectangle;
@@ -29,16 +32,13 @@ export class Knight extends Phaser.GameObjects.Sprite {
   init() {
     this.knight = this.scene.add.sprite(830, 480, KNIGHT[0].spriteKey);
     this.knight.scale = 3;
+    this.knight.setDepth(10);
 
     this.keys = {
       A: this.scene.input.keyboard!.addKey(Phaser.Input.Keyboard.KeyCodes.A),
       D: this.scene.input.keyboard!.addKey(Phaser.Input.Keyboard.KeyCodes.D),
-      SHIFT: this.scene.input.keyboard!.addKey(
-        Phaser.Input.Keyboard.KeyCodes.SHIFT
-      ),
-      SPACE: this.scene.input.keyboard!.addKey(
-        Phaser.Input.Keyboard.KeyCodes.SPACE
-      ),
+      SHIFT: this.scene.input.keyboard!.addKey(Phaser.Input.Keyboard.KeyCodes.SHIFT),
+      SPACE: this.scene.input.keyboard!.addKey(Phaser.Input.Keyboard.KeyCodes.SPACE),
     };
 
     this.addHitboxes();
@@ -63,6 +63,7 @@ export class Knight extends Phaser.GameObjects.Sprite {
           onComplete: () => {
             this.knight?.destroy();
             this.knight = undefined;
+            this.isFullyDead = true;
           },
         });
       }
@@ -131,7 +132,6 @@ export class Knight extends Phaser.GameObjects.Sprite {
 
   walk() {
     if (!this.knight || this.isAttacking) return;
-
     this.canIdle = true;
     this.isShieldActevated = false;
     this.knight.play("knight_walk", true);
@@ -141,13 +141,14 @@ export class Knight extends Phaser.GameObjects.Sprite {
     if (!this.knight || this.isShieldActevated || this.isAttacking) return;
     this.canIdle = false;
     this.knight.play("knight_shield", true);
+    this.knight.setTint(0x8888ff);
     this.isShieldActevated = true;
 
     if (!this.shieldHitbox) {
       this.shieldHitbox = this.scene.add.rectangle(
-        this.knight.flipX ? this.knight.x - 20 : this.knight.x + 20,
+        this.knight.flipX ? this.knight.x - 45 : this.knight.x + 45,
         this.knight.y,
-        40,
+        70,
         120,
         0xffff00,
         0
@@ -160,6 +161,7 @@ export class Knight extends Phaser.GameObjects.Sprite {
     if (!this.isShieldActevated && this.shieldHitbox) {
       this.shieldHitbox.destroy();
       this.shieldHitbox = undefined;
+      this.knight?.clearTint();
     }
   }
 
@@ -184,6 +186,30 @@ export class Knight extends Phaser.GameObjects.Sprite {
     }
   }
 
+  takeDamage() {
+    if (!this.knight || this.dead || this.isInvincible) return;
+
+    this.lives--;
+
+    if (this.lives <= 0) {
+      this.death();
+      return;
+    }
+
+    this.isInvincible = true;
+    this.scene.tweens.add({
+      targets: this.knight,
+      alpha: 0.15,
+      duration: 80,
+      yoyo: true,
+      repeat: 5,
+      onComplete: () => {
+        this.isInvincible = false;
+        if (this.knight) this.knight.alpha = 1;
+      },
+    });
+  }
+
   death() {
     if (!this.knight) return;
     this.canIdle = false;
@@ -193,6 +219,11 @@ export class Knight extends Phaser.GameObjects.Sprite {
     if (this.attackHitbox) {
       this.attackHitbox.destroy();
       this.attackHitbox = undefined;
+    }
+
+    if (this.shieldHitbox) {
+      this.shieldHitbox.destroy();
+      this.shieldHitbox = undefined;
     }
   }
 
@@ -205,6 +236,13 @@ export class Knight extends Phaser.GameObjects.Sprite {
     if (this.attackHitbox) {
       this.attackHitbox.setPosition(
         this.knight.flipX ? this.knight.x - 60 : this.knight.x + 60,
+        this.knight.y
+      );
+    }
+
+    if (this.shieldHitbox) {
+      this.shieldHitbox.setPosition(
+        this.knight.flipX ? this.knight.x - 45 : this.knight.x + 45,
         this.knight.y
       );
     }

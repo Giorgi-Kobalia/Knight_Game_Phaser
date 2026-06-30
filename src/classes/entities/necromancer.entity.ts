@@ -1,16 +1,18 @@
 import Phaser from "phaser";
 import { necromancer_constants } from "../../constants";
-import { Knight } from "./knight.entity";
 import { MainScene } from "../../scenes/main-scene.class";
 
 const NECROMANCER = necromancer_constants;
 
-export class Necromancer extends Phaser.GameObjects.Sprite{
+const OFFSCREEN_MARGIN = 200;
+
+export class Necromancer extends Phaser.GameObjects.Sprite {
   public scene: Phaser.Scene;
   public necromancer?: Phaser.GameObjects.Sprite;
   public skull?: Phaser.GameObjects.Sprite;
   public canIdle: boolean = true;
   public dead: boolean = false;
+  public isFullyDead: boolean = false;
   public spawnPoint: number = 0;
   public skullReload: boolean = false;
   public isAttacking: boolean = false;
@@ -20,7 +22,7 @@ export class Necromancer extends Phaser.GameObjects.Sprite{
   public range?: Phaser.GameObjects.Rectangle;
   public skullHitbox?: Phaser.GameObjects.Rectangle;
 
-    constructor(scene: Phaser.Scene) {
+  constructor(scene: Phaser.Scene) {
     super(scene, 0, 0, "");
     this.scene = scene;
   }
@@ -36,7 +38,6 @@ export class Necromancer extends Phaser.GameObjects.Sprite{
     );
 
     this.necromancer.scale = 3;
-
     this.necromancer.setFlipX(this.spawnOrientation === "left");
 
     this.addHitboxes();
@@ -66,9 +67,9 @@ export class Necromancer extends Phaser.GameObjects.Sprite{
           this.isAttacking = false;
           this.skullReload = true;
 
-          setTimeout(() => {
+          this.scene.time.delayedCall(4000, () => {
             this.skullReload = false;
-          }, 4000);
+          });
         }
 
         if (anim.key === "necromancer_death") {
@@ -79,6 +80,7 @@ export class Necromancer extends Phaser.GameObjects.Sprite{
             onComplete: () => {
               this.necromancer?.destroy();
               this.necromancer = undefined;
+              this.isFullyDead = true;
             },
           });
         }
@@ -97,18 +99,16 @@ export class Necromancer extends Phaser.GameObjects.Sprite{
       0xff0000,
       0
     );
-
     this.scene.physics.add.existing(this.hitbox);
 
     this.range = this.scene.add.rectangle(
       this.necromancer.x,
       this.necromancer.y,
-      1400,
+      700,
       10,
       0x00ff00,
       0
     );
-
     this.scene.physics.add.existing(this.range);
   }
 
@@ -129,7 +129,7 @@ export class Necromancer extends Phaser.GameObjects.Sprite{
   }
 
   spawnSkull(direction: boolean) {
-    if (!this.necromancer) return;
+    if (!this.necromancer || this.skull) return;
 
     this.skull = this.scene.add.sprite(
       direction ? this.necromancer.x + 46 : this.necromancer.x - 46,
@@ -149,7 +149,6 @@ export class Necromancer extends Phaser.GameObjects.Sprite{
       0xff0000,
       0
     );
-
     this.scene.physics.add.existing(this.skullHitbox);
   }
 
@@ -158,11 +157,15 @@ export class Necromancer extends Phaser.GameObjects.Sprite{
     this.skull.x += this.skull.getData("velocity");
     this.skull.x += worldSpeed;
     this.skullHitbox?.setPosition(this.skull.x, this.skull.y);
+
+    const screenWidth = this.scene.cameras.main.width;
+    if (this.skull.x < -100 || this.skull.x > screenWidth + 100) {
+      this.destroySkull();
+    }
   }
 
   destroySkull() {
     if (!this.skull) return;
-
     this.skull.destroy();
     this.skull = undefined;
 
@@ -192,14 +195,24 @@ export class Necromancer extends Phaser.GameObjects.Sprite{
     if (!this.necromancer || this.dead) return;
     this.canIdle = false;
     this.dead = true;
-    this.playAnimation("necromancer_death", true);
-    
+
+    const popupX = this.necromancer.x;
+    const popupY = this.necromancer.y;
+
     this.hitbox?.destroy();
+    this.hitbox = undefined;
     this.range?.destroy();
-    
+    this.range = undefined;
+
     if (this.scene instanceof MainScene) {
-      this.scene.increaseScore(1);
+      this.scene.increaseScore(3, popupX, popupY);
     }
+
+    this.necromancer.setTint(0xffffff);
+    this.scene.time.delayedCall(80, () => {
+      this.necromancer?.clearTint();
+      this.playAnimation("necromancer_death", true);
+    });
   }
 
   walk(speed: number = 0) {
@@ -207,6 +220,17 @@ export class Necromancer extends Phaser.GameObjects.Sprite{
     this.canIdle = false;
     this.playAnimation("necromancer_walk", true);
     this.necromancer.x += speed;
+  }
+
+  cleanup() {
+    this.destroySkull();
+    this.hitbox?.destroy();
+    this.hitbox = undefined;
+    this.range?.destroy();
+    this.range = undefined;
+    this.necromancer?.destroy();
+    this.necromancer = undefined;
+    this.isFullyDead = true;
   }
 
   updateHitboxePositions() {
@@ -218,19 +242,16 @@ export class Necromancer extends Phaser.GameObjects.Sprite{
         : this.necromancer.x - 20,
       this.necromancer.y
     );
-
     this.range?.setPosition(this.necromancer.x, this.necromancer.y);
   }
 
   knightInteractions() {
-    const knight = (this.scene as any).knight as Knight
+    const knight = (this.scene as MainScene).knight;
 
     if (!knight.knight) this.idle();
-
     if (!this.necromancer || !knight.knight) return;
 
     if (
-      knight &&
       this.range &&
       knight.range &&
       Phaser.Geom.Intersects.RectangleToRectangle(
@@ -251,7 +272,6 @@ export class Necromancer extends Phaser.GameObjects.Sprite{
     }
 
     if (
-      knight &&
       this.hitbox &&
       knight.attackHitbox &&
       Phaser.Geom.Intersects.RectangleToRectangle(
@@ -263,7 +283,6 @@ export class Necromancer extends Phaser.GameObjects.Sprite{
     }
 
     if (
-      knight &&
       this.skull &&
       this.skullHitbox &&
       knight.shieldHitbox &&
@@ -276,17 +295,17 @@ export class Necromancer extends Phaser.GameObjects.Sprite{
     }
 
     if (
-      knight &&
       this.skull &&
       this.skullHitbox &&
       knight.hitbox &&
+      !knight.isInvincible &&
       Phaser.Geom.Intersects.RectangleToRectangle(
         this.skullHitbox.getBounds(),
         knight.hitbox.getBounds()
       )
     ) {
       this.destroySkull();
-      knight.death();
+      knight.takeDamage();
     }
   }
 
@@ -297,6 +316,16 @@ export class Necromancer extends Phaser.GameObjects.Sprite{
     this.updateSkullPosition(worldSpeed);
 
     if (this.dead) return;
+
+    const screenWidth = this.scene.cameras.main.width;
+    if (
+      this.necromancer.x < -OFFSCREEN_MARGIN ||
+      this.necromancer.x > screenWidth + OFFSCREEN_MARGIN
+    ) {
+      this.cleanup();
+      return;
+    }
+
     this.knightInteractions();
 
     if (this.canIdle) {

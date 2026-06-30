@@ -1,9 +1,10 @@
 import Phaser from "phaser";
 import { archer_constants } from "../../constants";
-import { Knight } from "./knight.entity";
 import { MainScene } from "../../scenes/main-scene.class";
 
 const ARCHER = archer_constants;
+
+const OFFSCREEN_MARGIN = 200;
 
 export class Archer extends Phaser.GameObjects.Sprite {
   public scene: Phaser.Scene;
@@ -11,6 +12,7 @@ export class Archer extends Phaser.GameObjects.Sprite {
   public arrow?: Phaser.GameObjects.Sprite;
   public canIdle: boolean = true;
   public dead: boolean = false;
+  public isFullyDead: boolean = false;
   public spawnPoint: number = 0;
   public arrowReload: boolean = false;
   public isAttacking: boolean = false;
@@ -36,7 +38,6 @@ export class Archer extends Phaser.GameObjects.Sprite {
     );
 
     this.archer.scale = 3;
-
     this.archer.setFlipX(this.spawnOrientation === "left");
 
     this.addHitboxes();
@@ -60,9 +61,9 @@ export class Archer extends Phaser.GameObjects.Sprite {
         this.isAttacking = false;
         this.arrowReload = true;
 
-        setTimeout(() => {
+        this.scene.time.delayedCall(4000, () => {
           this.arrowReload = false;
-        }, 4000);
+        });
       }
 
       if (anim.key === "archer_death") {
@@ -73,6 +74,7 @@ export class Archer extends Phaser.GameObjects.Sprite {
           onComplete: () => {
             this.archer?.destroy();
             this.archer = undefined;
+            this.isFullyDead = true;
           },
         });
       }
@@ -90,7 +92,6 @@ export class Archer extends Phaser.GameObjects.Sprite {
       0xff0000,
       0
     );
-
     this.scene.physics.add.existing(this.hitbox);
 
     this.range = this.scene.add.rectangle(
@@ -101,7 +102,6 @@ export class Archer extends Phaser.GameObjects.Sprite {
       0x00ff00,
       0
     );
-
     this.scene.physics.add.existing(this.range);
   }
 
@@ -122,7 +122,7 @@ export class Archer extends Phaser.GameObjects.Sprite {
   }
 
   spawnArrow(direction: boolean) {
-    if (!this.archer) return;
+    if (!this.archer || this.arrow) return;
 
     this.arrow = this.scene.add.sprite(
       this.archer.x,
@@ -141,7 +141,6 @@ export class Archer extends Phaser.GameObjects.Sprite {
       0xff0000,
       0
     );
-
     this.scene.physics.add.existing(this.arrowHitbox);
   }
 
@@ -150,11 +149,15 @@ export class Archer extends Phaser.GameObjects.Sprite {
     this.arrow.x += this.arrow.getData("velocity");
     this.arrow.x += worldSpeed;
     this.arrowHitbox?.setPosition(this.arrow.x, this.arrow.y);
+
+    const screenWidth = this.scene.cameras.main.width;
+    if (this.arrow.x < -100 || this.arrow.x > screenWidth + 100) {
+      this.destroyArrow();
+    }
   }
 
   destroyArrow() {
     if (!this.arrow) return;
-
     this.arrow.destroy();
     this.arrow = undefined;
 
@@ -184,13 +187,24 @@ export class Archer extends Phaser.GameObjects.Sprite {
     if (!this.archer || this.dead) return;
     this.canIdle = false;
     this.dead = true;
-    this.playAnimation("archer_death", true);
+
+    const popupX = this.archer.x;
+    const popupY = this.archer.y;
+
     this.hitbox?.destroy();
+    this.hitbox = undefined;
     this.range?.destroy();
+    this.range = undefined;
 
     if (this.scene instanceof MainScene) {
-      this.scene.increaseScore(1);
+      this.scene.increaseScore(2, popupX, popupY);
     }
+
+    this.archer.setTint(0xffffff);
+    this.scene.time.delayedCall(80, () => {
+      this.archer?.clearTint();
+      this.playAnimation("archer_death", true);
+    });
   }
 
   walk(speed: number = 0) {
@@ -200,6 +214,17 @@ export class Archer extends Phaser.GameObjects.Sprite {
     this.archer.x += speed;
   }
 
+  cleanup() {
+    this.destroyArrow();
+    this.hitbox?.destroy();
+    this.hitbox = undefined;
+    this.range?.destroy();
+    this.range = undefined;
+    this.archer?.destroy();
+    this.archer = undefined;
+    this.isFullyDead = true;
+  }
+
   updateHitboxePositions() {
     if (!this.archer) return;
 
@@ -207,19 +232,16 @@ export class Archer extends Phaser.GameObjects.Sprite {
       this.archer.flipX ? this.archer.x + 20 : this.archer.x - 20,
       this.archer.y
     );
-
     this.range?.setPosition(this.archer.x, this.archer.y);
   }
 
   knightInteractions() {
-    const knight = (this.scene as any).knight as Knight;
+    const knight = (this.scene as MainScene).knight;
 
     if (!knight.knight) this.idle();
-
     if (!this.archer || !knight.knight) return;
 
     if (
-      knight &&
       this.range &&
       knight.range &&
       Phaser.Geom.Intersects.RectangleToRectangle(
@@ -240,7 +262,6 @@ export class Archer extends Phaser.GameObjects.Sprite {
     }
 
     if (
-      knight &&
       this.hitbox &&
       knight.attackHitbox &&
       Phaser.Geom.Intersects.RectangleToRectangle(
@@ -252,7 +273,6 @@ export class Archer extends Phaser.GameObjects.Sprite {
     }
 
     if (
-      knight &&
       this.arrow &&
       this.arrowHitbox &&
       knight.shieldHitbox &&
@@ -265,17 +285,17 @@ export class Archer extends Phaser.GameObjects.Sprite {
     }
 
     if (
-      knight &&
       this.arrow &&
       this.arrowHitbox &&
       knight.hitbox &&
+      !knight.isInvincible &&
       Phaser.Geom.Intersects.RectangleToRectangle(
         this.arrowHitbox.getBounds(),
         knight.hitbox.getBounds()
       )
     ) {
       this.destroyArrow();
-      knight.death();
+      knight.takeDamage();
     }
   }
 
@@ -286,6 +306,16 @@ export class Archer extends Phaser.GameObjects.Sprite {
     this.updateArrowPosition(worldSpeed);
 
     if (this.dead) return;
+
+    const screenWidth = this.scene.cameras.main.width;
+    if (
+      this.archer.x < -OFFSCREEN_MARGIN ||
+      this.archer.x > screenWidth + OFFSCREEN_MARGIN
+    ) {
+      this.cleanup();
+      return;
+    }
+
     this.knightInteractions();
 
     if (this.canIdle) {
